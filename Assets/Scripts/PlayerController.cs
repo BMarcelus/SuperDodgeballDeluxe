@@ -97,13 +97,15 @@ public class PlayerController : NetworkBehaviour {
         thrown.GetComponent<SphereCollider>().isTrigger = false;
         thrown.GetComponent<Weapon>().isHeld = false;
         thrown.GetComponent<Weapon>().isThrown = true;
+        if (thrown.GetComponent<Weapon>().type == WeaponType.Rock) {
+            thrown.GetComponent<Weapon>().rockRot = new Vector3(Random.Range(-1f,1f), Random.Range(-1f,1f), Random.Range(-1f,1f));
+        }
     }
 
     [Command]
     void CmdPickUpWeapon(GameObject weapon, GameObject player) {
         weapon.GetComponent<Rigidbody>().isKinematic = true;
         weapon.GetComponent<Weapon>().isHeld = true;
-        weapon.transform.rotation = Quaternion.identity;
 
         player.GetComponent<PlayerController>().currentWeaponObject = weapon;
         RpcPickUpWeapon(weapon, player);
@@ -116,9 +118,11 @@ public class PlayerController : NetworkBehaviour {
         if (isLocalPlayer) {
             weapon.transform.SetParent(player.GetComponent<PlayerController>().camera.transform);
             weapon.transform.localPosition = pc.clientHandPosition.transform.localPosition;
+            weapon.transform.localRotation = Quaternion.identity;
         } else {
             weapon.transform.SetParent(player.transform);
             weapon.transform.localPosition = pc.serverHandPosition.transform.localPosition;
+            weapon.transform.localRotation = Quaternion.identity;
         }
     }
 

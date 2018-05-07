@@ -171,6 +171,9 @@ MonoBehaviour:
   isThrown: 0
   type: 0
   lastHeld: {fileID: 0}
+  rockRotSpeed: 0
+  scissorRotSpeed: 0
+  rockRot: {x: 0, y: 0, z: 0}
 --- !u!135 &135961773437203696
 SphereCollider:
   m_ObjectHideFlags: 1

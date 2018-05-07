@@ -10,10 +10,39 @@ public class Weapon : NetworkBehaviour {
     public bool isThrown;
     public WeaponType type;
     public GameObject lastHeld;
+    public float rockRotSpeed, scissorRotSpeed;
+    public Vector3 rockRot; // Set to random by player on throw
 
     [Command]
     void CmdDestroySelf() {
         NetworkServer.Destroy(gameObject);
+    }
+
+    [Command]
+    void CmdSetPosition() {
+        RpcSetPosition(transform.position); // server's pos
+    }
+
+    [ClientRpc]
+    void RpcSetPosition(Vector3 pos) {
+        transform.position = pos;
+    }
+
+    void Update() {
+        // Rotation during throwing
+        if (isThrown) {
+            switch (type) {
+                case WeaponType.Rock:
+                    transform.Rotate(rockRot * rockRotSpeed * Time.deltaTime);
+                    break;
+                case WeaponType.Paper:
+                    transform.LookAt(transform.position + GetComponent<Rigidbody>().velocity);
+                    break;
+                case WeaponType.Scissors:
+                    transform.Rotate(scissorRotSpeed * Time.deltaTime, 0, 0);
+                    break;
+            }
+        }
     }
 
     void OnCollisionEnter(Collision c) {
@@ -21,6 +50,7 @@ public class Weapon : NetworkBehaviour {
             isThrown = false;
             GetComponent<Rigidbody>().isKinematic = true;
             GetComponent<SphereCollider>().isTrigger = true; // Won't be picked up by players until it becomes a trigger again
+            CmdSetPosition(); // Make sure every player has the exact server position when it stops, rotation doesn't really matter
         }
     }
 
@@ -28,9 +58,5 @@ public class Weapon : NetworkBehaviour {
         if (c.gameObject.tag == "Bounds") {
             CmdDestroySelf();
         }
-    }
-
-    void OnDestroy() {
-        
     }
 }

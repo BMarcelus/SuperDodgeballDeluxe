@@ -9,6 +9,7 @@ public class WeaponSpawner : NetworkBehaviour {
     public float respawnTime;
 
     public float hoverAmount, hoverSpeed;
+    public float yRotateSpeed;
 
     [SyncVar]
     GameObject attachedWeapon;
@@ -20,6 +21,22 @@ public class WeaponSpawner : NetworkBehaviour {
 	void Start () {
 		currentRespawnTimer = -1; // Auto spawn on server start immediately
 	}
+
+    void OnDrawGizmos() {
+        switch(spawnType) {
+            case WeaponType.Rock:
+                Gizmos.color = Color.red;
+                break;
+            case WeaponType.Paper:
+                Gizmos.color = Color.cyan;
+                break;
+            case WeaponType.Scissors:
+                Gizmos.color = Color.green;
+                break;
+        }
+        
+        Gizmos.DrawSphere(transform.position, 0.25f);
+    }
 
 	[Command]
     void CmdSpawnWeapon(GameObject prefab) {
@@ -44,11 +61,13 @@ public class WeaponSpawner : NetworkBehaviour {
                 currentRespawnTimer = 0;
                 switch (spawnType) {
                     case WeaponType.Rock:
-                        CmdSpawnWeapon(Resources.Load<GameObject>("TestDodgeball"));
+                        CmdSpawnWeapon(Resources.Load<GameObject>("Weapon/Rock"));
                         break;
                     case WeaponType.Paper:
+                        CmdSpawnWeapon(Resources.Load<GameObject>("Weapon/Paper"));
                         break;
                     case WeaponType.Scissors:
+                        CmdSpawnWeapon(Resources.Load<GameObject>("Weapon/Scissors"));
                         break;
                 }
             }
@@ -57,6 +76,7 @@ public class WeaponSpawner : NetworkBehaviour {
         // Weapon hovering
         if (attachedWeapon) {
             attachedWeapon.transform.position = new Vector3(attachedWeapon.transform.position.x, transform.position.y + Mathf.Sin(Time.timeSinceLevelLoad*hoverSpeed)*hoverAmount, attachedWeapon.transform.position.z);
+            attachedWeapon.transform.Rotate(0, yRotateSpeed*Time.deltaTime, 0);
         }
 	}
 }
