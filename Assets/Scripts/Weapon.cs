@@ -47,6 +47,7 @@ public class Weapon : NetworkBehaviour {
 
     void OnCollisionEnter(Collision c) {
         if (isThrown && c.collider.gameObject.layer != LayerMask.NameToLayer("LocalPlayer") && c.collider.gameObject.layer != LayerMask.NameToLayer("OtherPlayer")) {
+            lastHeld = null;
             isThrown = false;
             GetComponent<Rigidbody>().isKinematic = true;
             GetComponent<SphereCollider>().isTrigger = true; // Won't be picked up by players until it becomes a trigger again

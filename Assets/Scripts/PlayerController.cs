@@ -27,6 +27,8 @@ public class PlayerController : NetworkBehaviour {
 
     bool isDying;
 
+    NetworkUIManager netUIManager;
+
 	void Start () {
 		rb = GetComponent<Rigidbody>();
 	}
@@ -35,10 +37,10 @@ public class PlayerController : NetworkBehaviour {
         if (!isLocalPlayer)
             return;
 
-        if (!Application.isEditor) {
+        //if (!Application.isEditor) {
             Cursor.visible = false;
             Cursor.lockState = CursorLockMode.Locked;
-        }
+        //}
 
 		if (Input.GetButtonDown("Fire1")) {
             // Raycast to weapon spawn pos, ignoring self. If no hit, throw weapon, else don't (prevents throwing inside a wall and losing it)
@@ -97,6 +99,7 @@ public class PlayerController : NetworkBehaviour {
         thrown.GetComponent<SphereCollider>().isTrigger = false;
         thrown.GetComponent<Weapon>().isHeld = false;
         thrown.GetComponent<Weapon>().isThrown = true;
+        thrown.GetComponent<Weapon>().lastHeld = player;
         if (thrown.GetComponent<Weapon>().type == WeaponType.Rock) {
             thrown.GetComponent<Weapon>().rockRot = new Vector3(Random.Range(-1f,1f), Random.Range(-1f,1f), Random.Range(-1f,1f));
         }
@@ -127,18 +130,22 @@ public class PlayerController : NetworkBehaviour {
     }
 
     public override void OnStartLocalPlayer() {
+        netUIManager = GameObject.Find("NetworkUIManager").GetComponent<NetworkUIManager>();
+        netUIManager.gameObject.SetActive(false);
+
         foreach (PlayerController player in FindObjectsOfType<PlayerController>()) {
             if (player.gameObject != gameObject) {
                 player.gameObject.layer = LayerMask.NameToLayer("OtherPlayer");
             }
         }
-
+        GameObject.Find("GameManager").GetComponent<GameManager>().musicManager.Stop();
         // Nab and set up the main camera (on client-side there will only ever be one camera, having cameras on player prefabs becomes an issue)
         camera = Camera.main;
         camera.transform.SetParent(transform);
+        camera.GetComponent<CameraCommander>().DoSomeShake(false);
+        camera.GetComponent<RotateAroundPoint>().enabled = false;
         camera.transform.localPosition = cameraPosition.transform.localPosition;
         camera.transform.localRotation = Quaternion.identity; // Camera rotation wouldn't line up with the player otherwise
-        camera.GetComponent<CameraCommander>().DoSomeShake(false);
 
         // To get things to look up/down with the camera on client, picked up weapons are children of the camera instead of player
         clientHandPosition.transform.SetParent(camera.transform);
@@ -154,11 +161,12 @@ public class PlayerController : NetworkBehaviour {
 
         // Touched weapon that isn't being already held
         Weapon weapon = collider.GetComponent<Weapon>();
-        if (collider.tag == "Weapon" && weapon && !weapon.isHeld) {
+        if (collider.tag == "Weapon" && weapon && !weapon.isHeld && !isDying) {
             if (weapon.isThrown) {
                 // Got hit -- ignore if from self, kill otherwise
-                if (weapon.lastHeld) {
+                if (weapon.lastHeld && weapon.lastHeld != gameObject) {
                     Debug.LogError("PLAYER " + name + " WAS KNOCKED OUT BY " + weapon.lastHeld.name + "!");
+                    RespawnSelf();
                 }
                 //RespawnSelf();
             } else {
@@ -172,7 +180,7 @@ public class PlayerController : NetworkBehaviour {
         }
 
         // Out of bounds
-        if (collider.tag == "Bounds") {
+        if (collider.tag == "Bounds" && !isDying) {
             // For now, there is no kill state - just bring the player back
             RespawnSelf();
         }

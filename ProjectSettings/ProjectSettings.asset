@@ -626,12 +626,13 @@ PlayerSettings:
     daydream:
       daydreamIconForeground: {fileID: 0}
       daydreamIconBackground: {fileID: 0}
-  cloudServicesEnabled: {}
+  cloudServicesEnabled:
+    UNet: 1
   facebookSdkVersion: 7.9.4
   apiCompatibilityLevel: 3
-  cloudProjectId: 
-  projectName: 
-  organizationId: 
+  cloudProjectId: a0166a6d-93e4-4a98-8233-88503daa496c
+  projectName: SuperDodgeballDeluxe
+  organizationId: fauxtrot
   cloudEnabled: 0
   enableNativePlatformBackendsForNewInputSystem: 0
   disableOldInputManagerSupport: 0
