@@ -27,7 +27,6 @@ public class IntroAnim : MonoBehaviour {
                 introPlayed = true;
                 StopCoroutine(introCoroutine);
                 GetComponent<Animator>().speed = Mathf.Infinity;
-                Camera.main.GetComponent<RotateAroundPoint>().enabled = true;
                 Camera.main.GetComponent<CameraCommander>().enabled = true;
                 GetComponent<AudioSource>().Stop();
                 gameManager.musicManager.PlayMenuMusic();
@@ -45,7 +44,6 @@ public class IntroAnim : MonoBehaviour {
         GetComponent<Animator>().speed = 1;
 
         yield return new WaitForSeconds(3.1f);
-        Camera.main.GetComponent<RotateAroundPoint>().enabled = true;
         Camera.main.GetComponent<CameraCommander>().enabled = true;
         yield return new WaitForSeconds(2f);
         gameManager.musicManager.PlayMenuMusic();

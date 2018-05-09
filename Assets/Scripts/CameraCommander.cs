@@ -4,21 +4,36 @@ using UnityEngine;
 
 public class CameraCommander : MonoBehaviour {
 
+    public Vector3 originalPos;
+
+    [Header("Shaking")]
     // Each rot axis can move differently
     public Vector3 shakeAmount;
     public Vector3 shakeSpeed;
-
-    public GameObject stareObject; // Set to something to make camera lock onto it
 
     bool doinALittleShake;
 
     Vector3 realRotation, shakeRotation;
 
-    public Vector3 originalPos;
+    [Header("Staring")]
+    public GameObject stareObject; // Set to something to make camera lock onto it
+
+    [Header("Rotating around point")]
+    public bool doRotate;
+    public Vector3 rotateAroundPoint;
+    public float rotateSpeed;
 
     void Start() {
         originalPos = transform.position;
         DoSomeShake(true);
+
+        if (doRotate) {
+            transform.LookAt(rotateAroundPoint);
+            if (doinALittleShake) {
+                realRotation = transform.localEulerAngles;
+                transform.localEulerAngles = realRotation + shakeRotation;
+            }
+        }
     }
 
 	void Update () {
@@ -30,6 +45,10 @@ public class CameraCommander : MonoBehaviour {
                 transform.localEulerAngles = realRotation + shakeRotation;
             }
         }
+
+        if (doRotate) {
+            transform.RotateAround(rotateAroundPoint, Vector3.up, rotateSpeed);
+        }
 	}
 
 
@@ -37,7 +56,7 @@ public class CameraCommander : MonoBehaviour {
         if (doinALittleShake) {
             realRotation = transform.localEulerAngles - shakeRotation;
 
-            // Each axis is animated differently, making it feel more organic
+            // Each axis is animated separately
             shakeRotation = new Vector3(
                 shakeAmount.x * Mathf.Sin(shakeSpeed.x * Time.timeSinceLevelLoad),
                 shakeAmount.y * Mathf.Cos(shakeSpeed.y * Time.timeSinceLevelLoad),

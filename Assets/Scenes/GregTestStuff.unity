@@ -16280,7 +16280,6 @@ GameObject:
   - component: {fileID: 1757298997}
   - component: {fileID: 1757298996}
   - component: {fileID: 1757299000}
-  - component: {fileID: 1757299002}
   - component: {fileID: 1757299001}
   m_Layer: 0
   m_Name: MainCamera
@@ -16374,24 +16373,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ba2e722d9cd076c4babc32eee503f5fb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  originalPos: {x: 0, y: 0, z: 0}
   shakeAmount: {x: 0.74, y: 0.578, z: 6}
   shakeSpeed: {x: 1, y: 1.725, z: 1.1}
   stareObject: {fileID: 0}
-  originalPos: {x: 0, y: 0, z: 0}
---- !u!114 &1757299002
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1757298995}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b30562fb5ad87324eb2596dd2a5be2c3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  speed: 0.35
-  centerPoint: {x: -8, y: 0, z: 6}
-  isPlane: 0
+  doRotate: 1
+  rotateAroundPoint: {x: -8, y: 0, z: 6}
+  rotateSpeed: 0.35
 --- !u!1 &1757639902
 GameObject:
   m_ObjectHideFlags: 0
