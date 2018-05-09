@@ -143,7 +143,7 @@ public class PlayerController : NetworkBehaviour {
         camera = Camera.main;
         camera.transform.SetParent(transform);
         camera.GetComponent<CameraCommander>().DoSomeShake(false);
-        camera.GetComponent<RotateAroundPoint>().enabled = false;
+        camera.GetComponent<CameraCommander>().DoRotate(false);;
         camera.transform.localPosition = cameraPosition.transform.localPosition;
         camera.transform.localRotation = Quaternion.identity; // Camera rotation wouldn't line up with the player otherwise
 

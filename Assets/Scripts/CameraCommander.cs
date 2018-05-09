@@ -26,14 +26,7 @@ public class CameraCommander : MonoBehaviour {
     void Start() {
         originalPos = transform.position;
         DoSomeShake(true);
-
-        if (doRotate) {
-            transform.LookAt(rotateAroundPoint);
-            if (doinALittleShake) {
-                realRotation = transform.localEulerAngles;
-                transform.localEulerAngles = realRotation + shakeRotation;
-            }
-        }
+        DoRotate(true);
     }
 
 	void Update () {
@@ -75,6 +68,18 @@ public class CameraCommander : MonoBehaviour {
             shakeRotation = Vector3.zero; // Reset shake
         } else {
             transform.localEulerAngles -= shakeRotation; // Reset look
+        }
+    }
+
+    public void DoRotate(bool rotate) {
+        if (doRotate = rotate) {
+            transform.LookAt(rotateAroundPoint);
+            if (doinALittleShake) {
+                realRotation = transform.localEulerAngles;
+                transform.localEulerAngles = realRotation + shakeRotation;
+            }
+        } else {
+            transform.localEulerAngles = realRotation;
         }
     }
 }
