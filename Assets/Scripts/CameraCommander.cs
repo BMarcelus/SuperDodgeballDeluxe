@@ -38,12 +38,13 @@ public class CameraCommander : MonoBehaviour {
                 transform.localEulerAngles = realRotation + shakeRotation;
             }
         }
+	}
 
+    void FixedUpdate() {
         if (doRotate) {
             transform.RotateAround(rotateAroundPoint, Vector3.up, rotateSpeed);
         }
-	}
-
+    }
 
     void LateUpdate() {
         if (doinALittleShake) {

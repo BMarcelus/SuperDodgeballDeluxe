@@ -132,6 +132,8 @@ public class PlayerController : NetworkBehaviour {
     public override void OnStartLocalPlayer() {
         netUIManager = GameObject.Find("NetworkUIManager").GetComponent<NetworkUIManager>();
         netUIManager.gameObject.SetActive(false);
+        netUIManager.lanToNetButton.gameObject.SetActive(false);
+        netUIManager.netToLanButton.gameObject.SetActive(false);
 
         foreach (PlayerController player in FindObjectsOfType<PlayerController>()) {
             if (player.gameObject != gameObject) {
@@ -139,6 +141,7 @@ public class PlayerController : NetworkBehaviour {
             }
         }
         GameObject.Find("GameManager").GetComponent<GameManager>().musicManager.Stop();
+        GameObject.Find("GameManager").GetComponent<GameManager>().blackFade.ClearColor();
         // Nab and set up the main camera (on client-side there will only ever be one camera, having cameras on player prefabs becomes an issue)
         camera = Camera.main;
         camera.transform.SetParent(transform);

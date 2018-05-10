@@ -11,7 +11,11 @@ public class CustomNetworkManager : NetworkManager {
     public static CustomNetworkManager instance;
 
     void Awake() {
+        // Singleton stuff, needs to carry across multiple scenes
+        if(instance != null && instance != this)
+            Destroy(gameObject);
         instance = this;
+        DontDestroyOnLoad(gameObject);
     }
 
     public override void OnServerAddPlayer(NetworkConnection conn, short playerControllerId) {
