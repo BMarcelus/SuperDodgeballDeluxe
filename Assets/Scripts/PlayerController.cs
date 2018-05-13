@@ -27,7 +27,7 @@ public class PlayerController : NetworkBehaviour {
 
     bool isDying;
 
-    NetworkUIManager netUIManager;
+    MenuUIManager uiManager;
 
 	void Start () {
 		rb = GetComponent<Rigidbody>();
@@ -42,7 +42,7 @@ public class PlayerController : NetworkBehaviour {
             Cursor.lockState = CursorLockMode.Locked;
         //}
 
-		if (Input.GetButtonDown("Fire1")) {
+		if (InputManager.GetFire1Down()) {
             // Raycast to weapon spawn pos, ignoring self. If no hit, throw weapon, else don't (prevents throwing inside a wall and losing it)
             RaycastHit hit;
             Physics.Raycast(camera.transform.position, camera.transform.forward, out hit, 1);
@@ -63,9 +63,9 @@ public class PlayerController : NetworkBehaviour {
                 camera.transform.localEulerAngles = new Vector3(-camRotationX, camera.transform.localEulerAngles.y, camera.transform.localEulerAngles.z);
             }
 
-            float forceX = Input.GetAxis("Horizontal") * transform.forward.z + Input.GetAxis("Vertical") * transform.forward.x;
-            float forceZ = -Input.GetAxis("Horizontal") * transform.forward.x + Input.GetAxis("Vertical") * transform.forward.z;
-            float forceY = Input.GetButtonDown("Jump") ? jumpForce : 0;
+            float forceX = InputManager.GetHorizontal() * transform.forward.z + InputManager.GetVertical() * transform.forward.x;
+            float forceZ = -InputManager.GetHorizontal() * transform.forward.x + InputManager.GetVertical() * transform.forward.z;
+            float forceY = InputManager.GetJumpDown() ? jumpForce : 0;
         
             rb.velocity = new Vector3(forceX * playerSpeed, rb.velocity.y + forceY, forceZ * playerSpeed);
         }
@@ -100,6 +100,7 @@ public class PlayerController : NetworkBehaviour {
         thrown.GetComponent<Weapon>().isHeld = false;
         thrown.GetComponent<Weapon>().isThrown = true;
         thrown.GetComponent<Weapon>().lastHeld = player;
+
         if (thrown.GetComponent<Weapon>().type == WeaponType.Rock) {
             thrown.GetComponent<Weapon>().rockRot = new Vector3(Random.Range(-1f,1f), Random.Range(-1f,1f), Random.Range(-1f,1f));
         }
@@ -130,17 +131,15 @@ public class PlayerController : NetworkBehaviour {
     }
 
     public override void OnStartLocalPlayer() {
-        netUIManager = GameObject.Find("NetworkUIManager").GetComponent<NetworkUIManager>();
-        netUIManager.gameObject.SetActive(false);
-        netUIManager.lanToNetButton.gameObject.SetActive(false);
-        netUIManager.netToLanButton.gameObject.SetActive(false);
+        uiManager = GameManager.instance.canvas.GetComponent<MenuUIManager>();
+        uiManager.HideThingsOnJoined();
 
         foreach (PlayerController player in FindObjectsOfType<PlayerController>()) {
             if (player.gameObject != gameObject) {
                 player.gameObject.layer = LayerMask.NameToLayer("OtherPlayer");
             }
         }
-        GameObject.Find("GameManager").GetComponent<GameManager>().musicManager.Stop();
+        GameObject.Find("GameManager").GetComponent<GameManager>().musicManager.StopMusic();
         GameObject.Find("GameManager").GetComponent<GameManager>().blackFade.ClearColor();
         // Nab and set up the main camera (on client-side there will only ever be one camera, having cameras on player prefabs becomes an issue)
         camera = Camera.main;

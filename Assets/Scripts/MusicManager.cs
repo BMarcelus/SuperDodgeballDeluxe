@@ -4,30 +4,43 @@ using UnityEngine;
 
 public class MusicManager : MonoBehaviour {
     
-    public AudioClip menuMusic;
+    public AudioClip introMusClip, menuMusClip;
 
     [Range(0f, 2f)]
     public float musicVolume;
 
-    AudioSource currentMusic;
+    AudioSource introSource, musicSource;
 
     void Awake() {
         DontDestroyOnLoad(gameObject);
-        currentMusic = gameObject.AddComponent<AudioSource>();
-        currentMusic.playOnAwake = false;
-        currentMusic.loop = true;
+        musicSource = gameObject.AddComponent<AudioSource>();
+        musicSource.playOnAwake = false;
+        musicSource.loop = true;
+        introSource = gameObject.AddComponent<AudioSource>();
+        introSource.playOnAwake = false;
+        introSource.loop = false;
+    }
+
+    public void PlayIntroMusic() {
+        musicSource.clip = introMusClip;
+        musicSource.Play();
     }
 
     public void PlayMenuMusic() {
-        currentMusic.clip = menuMusic;
-        currentMusic.Play();
+        musicSource.clip = menuMusClip;
+        musicSource.Play();
     }
 
     void Update() {
-        currentMusic.volume = musicVolume;
+        introSource.volume = musicVolume;
+        musicSource.volume = musicVolume;
     }
 
-    public void Stop() {
-        currentMusic.Stop();
+    public void StopIntro() {
+        introSource.Stop();
+    }
+
+    public void StopMusic() {
+        musicSource.Stop();
     }
 }
