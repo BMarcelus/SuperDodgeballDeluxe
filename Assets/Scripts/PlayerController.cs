@@ -16,8 +16,6 @@ public class PlayerController : NetworkBehaviour {
     public GameObject clientHandPosition;
     public GameObject cameraPosition;
 
-    public Vector2 sensitivity;
-
     public float playerSpeed;
     public float jumpForce;
 
@@ -28,9 +26,11 @@ public class PlayerController : NetworkBehaviour {
     bool isDying;
 
     MenuUIManager uiManager;
+    GameManager gm;
 
 	void Start () {
 		rb = GetComponent<Rigidbody>();
+        gm = GameManager.instance;
 	}
 	
 	void Update () {
@@ -54,11 +54,11 @@ public class PlayerController : NetworkBehaviour {
         }
 
         if (!isDying) {
-            transform.Rotate(0, Input.GetAxis("Mouse X") * sensitivity.x, 0);
+            transform.Rotate(0, Input.GetAxis("Mouse X") * gm.mouseSensitivity.x, 0);
 
             if (camera) {
                 // Not as easy as just .Rotate() if we wish to clamp
-                camRotationX += Input.GetAxis("Mouse Y") * sensitivity.y;
+                camRotationX += Input.GetAxis("Mouse Y") * gm.mouseSensitivity.y;
                 camRotationX = Mathf.Clamp(camRotationX, -90, 90);
                 camera.transform.localEulerAngles = new Vector3(-camRotationX, camera.transform.localEulerAngles.y, camera.transform.localEulerAngles.z);
             }
@@ -131,7 +131,8 @@ public class PlayerController : NetworkBehaviour {
     }
 
     public override void OnStartLocalPlayer() {
-        uiManager = GameManager.instance.canvas.GetComponent<MenuUIManager>();
+        gm = GameManager.instance;
+        uiManager = gm.canvas.GetComponent<MenuUIManager>();
         uiManager.HideThingsOnJoined();
 
         foreach (PlayerController player in FindObjectsOfType<PlayerController>()) {
@@ -139,8 +140,8 @@ public class PlayerController : NetworkBehaviour {
                 player.gameObject.layer = LayerMask.NameToLayer("OtherPlayer");
             }
         }
-        GameObject.Find("GameManager").GetComponent<GameManager>().musicManager.StopMusic();
-        GameObject.Find("GameManager").GetComponent<GameManager>().blackFade.ClearColor();
+        gm.musicManager.StopMusic();
+        gm.blackFade.ClearColor();
         // Nab and set up the main camera (on client-side there will only ever be one camera, having cameras on player prefabs becomes an issue)
         camera = Camera.main;
         camera.transform.SetParent(transform);

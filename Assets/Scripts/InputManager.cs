@@ -2,8 +2,13 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Yes we're doing this. Input Manager does not allow for rebindable keys. Put all keys that should be rebound in here.
+// For passing control schemes around, not really utilized inside of InputManager much
+public struct InputKeys {
+    public KeyCode left, leftAlt, right, rightAlt, up, upAlt, down, downAlt, jump, jumpAlt, fire1, fire1Alt, fire2, fire2Alt;
+    public bool joystick;
+}
 
+// Yes we're doing this. Input Manager does not allow for rebindable keys. Put all keys that should be rebound in here.
 public static class InputManager {
 
     public static KeyCode keyLeft, keyLeftAlt, keyRight, keyRightAlt, keyUp, keyUpAlt, keyDown, keyDownAlt;
@@ -95,7 +100,7 @@ public static class InputManager {
 
     // Get vertical
     public static float GetVertical() {
-        return (GetDown() ? -1 : 0) + (GetUp() ? 1 : 0);
+        return ((GetDown() ? -1 : 0) + (GetUp() ? 1 : 0)) * (useJoystickAxes ? -1 : 1);
     }
 
     // Joystick axes
@@ -128,20 +133,42 @@ public static class InputManager {
         return Input.GetKeyUp(k);
     }
 
-    public static void SetDefaultKeys() {
-        keyLeft = KeyCode.A;
-        keyLeftAlt = KeyCode.LeftArrow;
-        keyRight = KeyCode.D;
-        keyRightAlt = KeyCode.RightArrow;
-        keyUp = KeyCode.W;
-        keyUpAlt = KeyCode.UpArrow;
-        keyDown = KeyCode.S;
-        keyDownAlt = KeyCode.DownArrow;
-        keyJump = KeyCode.Space;
-        keyJumpAlt = KeyCode.None;
-        keyFire1 = KeyCode.Mouse0;
-        keyFire1Alt = KeyCode.LeftControl;
-        keyFire2 = KeyCode.Mouse1;
-        keyFire2Alt = KeyCode.LeftAlt;
+    public static InputKeys GetDefaultKeys() {
+        InputKeys keys = new InputKeys {
+            left = KeyCode.A,
+            leftAlt = KeyCode.LeftArrow,
+            right = KeyCode.D,
+            rightAlt = KeyCode.RightArrow,
+            up = KeyCode.W,
+            upAlt = KeyCode.UpArrow,
+            down = KeyCode.S,
+            downAlt = KeyCode.DownArrow,
+            jump = KeyCode.Space,
+            jumpAlt = KeyCode.None,
+            fire1 = KeyCode.Mouse0,
+            fire1Alt = KeyCode.LeftControl,
+            fire2 = KeyCode.Mouse1,
+            fire2Alt = KeyCode.LeftAlt,
+            joystick = false
+        };
+        return keys;
+    }
+
+    public static void SetKeys(InputKeys keys) {
+        keyLeft = keys.left;
+        keyLeftAlt = keys.leftAlt;
+        keyRight = keys.right;
+        keyRightAlt = keys.rightAlt;
+        keyUp = keys.up;
+        keyUpAlt = keys.upAlt;
+        keyDown = keys.down;
+        keyDownAlt = keys.downAlt;
+        keyJump = keys.jump;
+        keyJumpAlt = keys.jumpAlt;
+        keyFire1 = keys.fire1;
+        keyFire1Alt = keys.fire1Alt;
+        keyFire2 = keys.fire2;
+        keyFire2Alt = keys.fire2Alt;
+        useJoystickAxes = keys.joystick;
     }
 }

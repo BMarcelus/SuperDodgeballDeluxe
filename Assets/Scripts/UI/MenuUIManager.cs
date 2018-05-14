@@ -1,11 +1,11 @@
-﻿using System.Collections;
+﻿using System;
+using System.Threading.Tasks;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Networking;
 using UnityEngine.Networking.Match;
-using System;
-using System.Threading.Tasks;
 using UnityEngine.EventSystems;
 
 public class MenuUIManager : MonoBehaviour {
@@ -30,7 +30,23 @@ public class MenuUIManager : MonoBehaviour {
     public GameObject netMatchPanelPrefab;
 
     [Header("Options Menu")]
-    public GameObject optionsPanel;
+    public GameObject optionsParent;
+    public Button optionsBackButton, optionsApplyButton, optionsSettingsTab, optionsControlsTab, optionsPlayerTab;
+    public GameObject optionsSettingsPanel, optionsControlsPanel, optionsPlayerPanel;
+    // Settings
+    public Dropdown resolutionDropdown, graphicsDropdown;
+    public Toggle fullscreenToggle;
+    public Slider fovSlider, mouseXSlider, mouseYSlider, musicSlider, sfxSlider, crowdSlider;
+    public Text fovText, mouseXText, mouseYText;
+    // Controls
+    public Button lButton, lAltButton, rButton, rAltButton, uButton, uAltButton, dButton, dAltButton;
+    public Button jumpButton, jumpAltButton, fire1Button, fire1AltButton, fire2Button, fire2AltButton;
+    public Toggle joystickToggle;
+    // Player
+    public InputField playerNameInputField;
+    public ColorPicker playerColorPicker;
+
+    public Color controlModified;
 
     [Header("Misc")]
     public GameObject creditsPanel;
@@ -45,8 +61,19 @@ public class MenuUIManager : MonoBehaviour {
     Canvas canvas;
     Animator animator;
 
+    Coroutine controlPressedCoroutine;
+    List<Button> controlButtons; // Makes it easier to go through them
+    bool controlPressedCancelled;
+
     public void Start() {
         nm = CustomNetworkManager.instance;
+
+        controlButtons = new List<Button>();
+        controlButtons.AddRange(new Button[] { lButton, lAltButton, rButton, rAltButton, uButton, uAltButton, dButton, dAltButton, jumpButton, jumpAltButton, fire1Button, fire1AltButton, fire2Button, fire2AltButton });
+
+        foreach (Button b in controlButtons) {
+            b.onClick.AddListener(delegate { ControlBtnPressed(b);});
+        }
     }
 
     public void PlayIntro() {
@@ -62,6 +89,7 @@ public class MenuUIManager : MonoBehaviour {
         mainMenuPanel.SetActive(true);
         lanParent.SetActive(true);
         netParent.SetActive(true);
+        optionsParent.SetActive(true);
         creditsPanel.SetActive(true);
         introCoroutine = StartCoroutine(IntroCoroutine());
     }
@@ -91,12 +119,281 @@ public class MenuUIManager : MonoBehaviour {
         }
     }
 
+    public void MainMenu_QuitPressed() {
+        Application.Quit();
+    }
+
+    /////////////////////
+    //  Options Panel  //
+    /////////////////////
+
+    void SetUISettings(GameSettings settings) {
+        int resolutionIndex = GetIndexForResolution(settings.resolutionX, settings.resolutionY);
+        resolutionDropdown.value = resolutionIndex;
+        resolutionDropdown.RefreshShownValue();
+
+        fullscreenToggle.isOn = settings.fullscreen;
+        graphicsDropdown.value = settings.gfxPreset;
+        graphicsDropdown.RefreshShownValue();
+
+        fovSlider.value = settings.fov;
+        mouseXSlider.value = settings.mouseSensitivityX;
+        mouseYSlider.value = settings.mouseSensitivityY;
+        musicSlider.value = settings.musicVolume;
+        sfxSlider.value = settings.sfxVolume;
+        crowdSlider.value = settings.crowdVolume;
+
+        playerColorPicker.AssignColor(ColorValues.R, settings.playerColor.r);
+        playerColorPicker.AssignColor(ColorValues.G, settings.playerColor.g);
+        playerColorPicker.AssignColor(ColorValues.B, settings.playerColor.b);
+
+        playerNameInputField.text = settings.playerName;
+    }
+
+    void SetUIKeys(InputKeys keys) {
+        lButton.GetComponent<ControlButton>().keyCode = keys.left;
+        lAltButton.GetComponent<ControlButton>().keyCode = keys.leftAlt;
+        rButton.GetComponent<ControlButton>().keyCode = keys.right;
+        rAltButton.GetComponent<ControlButton>().keyCode = keys.rightAlt;
+        uButton.GetComponent<ControlButton>().keyCode = keys.up;
+        uAltButton.GetComponent<ControlButton>().keyCode = keys.upAlt;
+        dButton.GetComponent<ControlButton>().keyCode = keys.down;
+        dAltButton.GetComponent<ControlButton>().keyCode = keys.downAlt;
+        jumpButton.GetComponent<ControlButton>().keyCode = keys.jump;
+        jumpAltButton.GetComponent<ControlButton>().keyCode = keys.jumpAlt;
+        fire1Button.GetComponent<ControlButton>().keyCode = keys.fire1;
+        fire1AltButton.GetComponent<ControlButton>().keyCode = keys.fire1Alt;
+        fire2Button.GetComponent<ControlButton>().keyCode = keys.fire2;
+        fire2AltButton.GetComponent<ControlButton>().keyCode = keys.fire2Alt;
+        joystickToggle.isOn = keys.joystick;
+
+        foreach (Button b in controlButtons) {
+            b.GetComponent<ControlButton>().text.text = b.GetComponent<ControlButton>().keyCode.ToString();
+        }
+    }
+
     public void MainMenu_OptionsPressed() {
+        animator.SetFloat("IntroToOptionsSpeed", 1);
+        animator.Play("UI_IntroToOptions", 0, 0);
+
+        // Get settings from Game Manager and apply to UI elements
+        SharpConfig.Configuration config = gm.GetConfiguration();
+        GameSettings settings = gm.ConfigurationToGameSettings(config);
+        SetUISettings(settings);
+
+        foreach (Button b in controlButtons) {
+            b.GetComponent<Image>().color = Color.white;
+        }
+    }
+
+    public void Options_BackPressed() {
+        animator.SetFloat("IntroToOptionsSpeed", -1);
+        animator.Play("UI_IntroToOptions", 0, 1);
+
+        if (controlPressedCoroutine != null) {
+            StopCoroutine(controlPressedCoroutine);
+            controlPressedCoroutine = null;
+            controlPressedCancelled = false;
+        }
+    }
+
+    public void Options_SettingsRevertPressed() {
+        GameSettings defaults = gm.GetDefaultSettings();
+        SetUISettings(defaults);
+    }
+
+    int GetIndexForResolution(float x, float y) {
+        for (int i = 0; i < resolutionDropdown.options.Count; ++i) {
+            Dropdown.OptionData option = resolutionDropdown.options[i];
+            if (!option.text.StartsWith("Custom")) {
+                string[] resStr = option.text.Split('x');
+                int optionX = int.Parse(resStr[0]);
+                int optionY = int.Parse(resStr[1]);
+                if (x == optionX && y == optionY) {
+                    return i;
+                }
+            }
+        }
+        return resolutionDropdown.options.Count-1; // Fallback is the last item, "Custom"
+    }
+
+    public void Options_SettingsApplyPressed() {
+        GameSettings settings = new GameSettings();
+
+        string resStr = resolutionDropdown.options[resolutionDropdown.value].text;
+        if (resStr.StartsWith("Custom")) {
+            KeyValuePair<int, int> customRes = gm.GetCustomResolution();
+            settings.resolutionX = customRes.Key;
+            settings.resolutionY = customRes.Value;
+        } else {
+            settings.resolutionX = int.Parse(resStr.Split('x')[0]);
+            settings.resolutionY = int.Parse(resStr.Split('x')[1]);
+        }
+        settings.fullscreen = fullscreenToggle.isOn;
+        settings.gfxPreset = graphicsDropdown.value;
+        settings.fov = (int) fovSlider.value;
+        settings.mouseSensitivityX = mouseXSlider.value;
+        settings.mouseSensitivityY =  mouseYSlider.value;
+        settings.musicVolume = musicSlider.value;
+        settings.sfxVolume = sfxSlider.value;
+        settings.crowdVolume = crowdSlider.value;
+
+        gm.SetOptionSettings(settings);
+    }
+
+    public void Options_ControlsRevertPressed() {
+        InputKeys defaults = InputManager.GetDefaultKeys();
+        SetUIKeys(defaults);
+
+        // Set the text here, rather than doubling the mess above
+        foreach (Button b in controlButtons) {
+            b.GetComponent<ControlButton>().text.text = b.GetComponent<ControlButton>().keyCode.ToString();
+            b.GetComponent<Image>().color = Color.white;
+        }
+    }
+
+    public void Options_ControlApplyPressed() {
+        InputKeys keys = new InputKeys {
+            left = lButton.GetComponent<ControlButton>().keyCode,
+            leftAlt = lAltButton.GetComponent<ControlButton>().keyCode,
+            right = rButton.GetComponent<ControlButton>().keyCode,
+            rightAlt = rAltButton.GetComponent<ControlButton>().keyCode,
+            up = uButton.GetComponent<ControlButton>().keyCode,
+            upAlt = uAltButton.GetComponent<ControlButton>().keyCode,
+            down = dButton.GetComponent<ControlButton>().keyCode,
+            downAlt = dAltButton.GetComponent<ControlButton>().keyCode,
+            jump = jumpButton.GetComponent<ControlButton>().keyCode,
+            jumpAlt= jumpAltButton.GetComponent<ControlButton>().keyCode,
+            fire1 = fire1Button.GetComponent<ControlButton>().keyCode,
+            fire1Alt = fire1AltButton.GetComponent<ControlButton>().keyCode,
+            fire2 = fire2Button.GetComponent<ControlButton>().keyCode,
+            fire2Alt = fire2AltButton.GetComponent<ControlButton>().keyCode,
+            joystick = joystickToggle.isOn
+        };
+
+        InputManager.SetKeys(keys);
+
+        gm.SaveControlsToConfig(keys);
+
+        foreach (Button b in controlButtons) {
+            b.GetComponent<Image>().color = Color.white;
+        }
+    }
+
+    public void Options_PlayerApplyPressed() {
+        GameSettings settings = new GameSettings() {
+            playerName = playerNameInputField.text,
+            playerColor = playerColorPicker.CurrentColor
+        };
+        gm.SetOptionPlayer(settings);
+    }
+
+    public void OptionsTab_SettingsPressed() {
+        OptionsTabActivate(true, false, false);
+        SharpConfig.Configuration config = gm.GetConfiguration();
+        GameSettings settings = gm.ConfigurationToGameSettings(config);
+        SetUISettings(settings);
+    }
+
+    public void OptionsTab_ControlsPressed() {
+        OptionsTabActivate(false, true, false);
+        foreach (Button b in controlButtons) { // Have to do this manually, unfortunately
+            b.GetComponent<ControlButton>().SetUp();
+        }
+        SharpConfig.Configuration config = gm.GetConfiguration();
+        InputKeys keys = gm.ConfigurationToInputKeys(config);
+        SetUIKeys(keys);
+    }
+
+    public void OptionsTab_PlayerPressed() {
+        OptionsTabActivate(false, false, true);
+        SharpConfig.Configuration config = gm.GetConfiguration();
+        GameSettings settings = gm.ConfigurationToGameSettings(config);
+        SetUISettings(settings);
+    }
+
+    void OptionsTabActivate(bool settings, bool controls, bool player) {
+        optionsSettingsTab.interactable = !settings;
+        optionsSettingsPanel.SetActive(settings);
+
+        optionsControlsTab.interactable = !controls;
+        optionsControlsPanel.SetActive(controls);
+
+        optionsPlayerTab.interactable = !player;
+        optionsPlayerPanel.SetActive(player);
+    }
+
+    public void Options_MusicSliderChanged(float value) {
+        gm.musicManager.musicVolume = value;
+    }
+
+    public void Options_SFXSliderChanged(float value) {
+        // TODO change volume levels when SFX becomes a thing
+    }
+
+    public void Options_CrowdSliderChanged(float value) {
+        // TODO change volume levels when crowd becomes a thing
+    }
+
+    public void Options_FOVSliderChanged(float value) {
+        fovText.text = value.ToString("00");
+    }
+
+    public void Options_MouseXSliderChanged(float value) {
+        mouseXText.text = value.ToString("0.0");
+    }
+
+    public void Options_MouseYSliderChanged(float value) {
+        mouseYText.text = value.ToString("0.0");
 
     }
 
-    public void MainMenu_QuitPressed() {
-        Application.Quit();
+    void ControlBtnPressed(Button button) {
+        if (controlPressedCoroutine == null) {
+            controlPressedCoroutine = StartCoroutine(ControlPressedCoroutine(button));
+        } else {
+            controlPressedCancelled = true;
+            controlPressedCoroutine = null;
+        }
+    }
+
+    bool AnotherControlButtonAssignedTo(Button thisButton, KeyCode kcode) {
+        foreach (Button otherButton in controlButtons) {
+            if (thisButton != otherButton && kcode == otherButton.GetComponent<ControlButton>().keyCode) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    IEnumerator ControlPressedCoroutine(Button button) {
+        Text keyText = button.GetComponent<ControlButton>().text;
+        KeyCode previous = button.GetComponent<ControlButton>().keyCode;
+
+        keyText.text = "...";
+
+        yield return new WaitUntil(delegate { return Input.anyKeyDown || controlPressedCancelled; });
+
+        if (controlPressedCancelled || Input.GetKeyDown(KeyCode.Backspace)) {
+            keyText.text = previous.ToString();
+        } else {
+            foreach(KeyCode kcode in Enum.GetValues(typeof(KeyCode))) {
+                if (Input.GetKeyDown(kcode)) {
+                    if (AnotherControlButtonAssignedTo(button, kcode)) {
+                        keyText.text = previous.ToString();
+                        break;
+                    } else {
+                        // Successful key bind
+                        button.GetComponent<ControlButton>().keyCode = kcode;
+                        button.GetComponent<ControlButton>().text.text = kcode.ToString();
+                        button.GetComponent<Image>().color = controlModified;
+                        break;
+                    }
+                }
+            }
+        }
+        controlPressedCoroutine = null;
+        controlPressedCancelled = false;
     }
 
     /////////////////////
