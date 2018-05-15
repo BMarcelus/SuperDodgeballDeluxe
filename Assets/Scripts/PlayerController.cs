@@ -128,6 +128,9 @@ public class PlayerController : NetworkBehaviour {
             weapon.transform.localPosition = pc.serverHandPosition.transform.localPosition;
             weapon.transform.localRotation = Quaternion.identity;
         }
+
+        //Gets the PickUpCylinder of the player picking up the item and Plays the Pick-Up Sound stored there
+        player.transform.Find("PickupItemCylinder").GetComponent<AudioSource>().Play();
     }
 
     public override void OnStartLocalPlayer() {
@@ -219,10 +222,10 @@ public class PlayerController : NetworkBehaviour {
         currentWeaponObject = null;
 
         camera.transform.SetParent(transform);
-        camera.transform.localPosition = cameraPosition.transform.localPosition;
-        camera.transform.localRotation = Quaternion.identity;
         camera.GetComponent<CameraCommander>().StareAtObject(null);
         camera.GetComponent<CameraCommander>().DoSomeShake(false);
+        camera.transform.localPosition = cameraPosition.transform.localPosition;
+        camera.transform.localRotation = Quaternion.identity;
         GetComponent<MeshRenderer>().enabled = false;
         visor.GetComponent<MeshRenderer>().enabled = false;
 
