@@ -19,10 +19,14 @@ public class PlayerController : NetworkBehaviour {
     public float playerSpeed;
     public float jumpForce;
 
-    private AudioSource runSound;
-    public AudioClip[] throwSounds;
+    public AudioSource runSound;
+    public AudioClip[] throwSoundList;
+    public AudioSource throwSound;
+    public AudioSource jumpSound;
 
     float camRotationX;
+
+    float curPower = 0;
 
     Rigidbody rb;
 
@@ -34,8 +38,8 @@ public class PlayerController : NetworkBehaviour {
 	void Start () {
 		rb = GetComponent<Rigidbody>();
         gm = GameManager.instance;
-        runSound = GetComponent<AudioSource>();
-	}
+        throwSound = transform.Find("ThrowSounds").GetComponent<AudioSource>();
+    }
 	
 	void Update () {
         if (!isLocalPlayer)
@@ -46,15 +50,36 @@ public class PlayerController : NetworkBehaviour {
             Cursor.lockState = CursorLockMode.Locked;
         //}
 
-		if (InputManager.GetFire1Down()) {
+        if(InputManager.GetFire1() && currentWeaponObject)
+        {
+            if (curPower < 1000)
+                curPower += 25;
+            camera.fieldOfView = Mathf.Lerp(60, 70, curPower / 1000f);
+            if(!throwSound.isPlaying && curPower < 1000)
+            {
+                CmdPlayerWindUpSound(true);
+            }
+            else if(curPower >= 1000)
+                CmdPlayerWindUpSound(false);
+        }
+		else if (InputManager.GetFire1Up()) {
             // Raycast to weapon spawn pos, ignoring self. If no hit, throw weapon, else don't (prevents throwing inside a wall and losing it)
             RaycastHit hit;
             Physics.Raycast(camera.transform.position, camera.transform.forward, out hit, 1);
             if (!hit.collider && currentWeaponObject) {
                 Vector3 pos = camera.transform.position + camera.transform.forward;
-                Vector3 force = camera.transform.forward * 1000;
+                Vector3 force = camera.transform.forward * curPower;
                 CmdFireWeapon(gameObject, pos, force);
             }
+            else
+            {
+                //Should just drop it if you're facing a wall
+                Vector3 pos = camera.transform.position;
+                Vector3 force = Vector3.zero;
+                CmdFireWeapon(gameObject, pos, force);
+            }
+            curPower = 0;
+            camera.fieldOfView = 60;
         }
 
         if (!isDying) {
@@ -72,25 +97,85 @@ public class PlayerController : NetworkBehaviour {
             float forceY = 0;
             if(InputManager.GetJumpDown())
             {
+                //Check to make sure the player is grouded before allowing them to jump
                 RaycastHit rh;
                 if(Physics.Raycast(transform.position, Vector3.down, out rh, 1, 1 << LayerMask.NameToLayer("Ground")))
                 {
                     forceY = jumpForce;
+                    CmdPlayerJumpSound(true);
                 }
             }
 
             if (forceX != 0 || forceZ != 0)
             {
                 if (!runSound.isPlaying)
-                    runSound.Play();
+                    CmdPlayerMovementSound(true);
             }
             else
-                runSound.Stop();
+                CmdPlayerMovementSound(false);
 
-        
+
             rb.velocity = new Vector3(forceX * playerSpeed, rb.velocity.y + forceY, forceZ * playerSpeed);
         }
 	}
+
+
+    //This is the sound controllers for running, jumping, and wind-up across network
+    #region
+
+    [Command]
+    void CmdPlayerMovementSound(bool val)
+    {
+        RpcPlayerMovementSounds(gameObject, val);
+    }
+
+    [ClientRpc]
+    void RpcPlayerMovementSounds(GameObject player, bool val)
+    {
+        PlayerController pc = player.GetComponent<PlayerController>();
+        if (val)
+            pc.runSound.Play();
+        else
+            pc.runSound.Stop();
+    }
+
+    [Command]
+    void CmdPlayerJumpSound(bool val)
+    {
+        RpcPlayerJumpSound(gameObject, val);
+    }
+
+    [ClientRpc]
+    void RpcPlayerJumpSound(GameObject player, bool val)
+    {
+        PlayerController pc = player.GetComponent<PlayerController>();
+        if (val)
+            pc.jumpSound.Play();
+        else
+            pc.jumpSound.Stop();
+    }
+
+    [Command]
+    void CmdPlayerWindUpSound(bool val)
+    {
+        RpcPlayerWindUpSound(gameObject, val);
+    }
+
+    [ClientRpc]
+    void RpcPlayerWindUpSound(GameObject player, bool val)
+    {
+        PlayerController pc = player.GetComponent<PlayerController>();
+        if (val)
+        {
+            pc.throwSound.clip = pc.throwSoundList[0];
+            pc.throwSound.Play();
+        }
+        else
+            pc.throwSound.Stop();
+    }
+
+    #endregion
+
 
     [Command]
     void CmdDestroyObject(GameObject obj) {
@@ -127,7 +212,8 @@ public class PlayerController : NetworkBehaviour {
         }
         AudioSource g = player.transform.Find("ThrowSounds").GetComponent<AudioSource>();
 
-        g.clip = throwSounds[Random.Range(0, throwSounds.Length)];
+        //First sounds is reserved for wind up sound
+        g.clip = throwSoundList[Random.Range(1, throwSoundList.Length)];
         g.pitch = Random.Range(0.9f, 1.1f);
         g.Play();
 
