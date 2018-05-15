@@ -19,6 +19,9 @@ public class PlayerController : NetworkBehaviour {
     public float playerSpeed;
     public float jumpForce;
 
+    private AudioSource runSound;
+    public AudioClip[] throwSounds;
+
     float camRotationX;
 
     Rigidbody rb;
@@ -31,6 +34,7 @@ public class PlayerController : NetworkBehaviour {
 	void Start () {
 		rb = GetComponent<Rigidbody>();
         gm = GameManager.instance;
+        runSound = GetComponent<AudioSource>();
 	}
 	
 	void Update () {
@@ -65,7 +69,24 @@ public class PlayerController : NetworkBehaviour {
 
             float forceX = InputManager.GetHorizontal() * transform.forward.z + InputManager.GetVertical() * transform.forward.x;
             float forceZ = -InputManager.GetHorizontal() * transform.forward.x + InputManager.GetVertical() * transform.forward.z;
-            float forceY = InputManager.GetJumpDown() ? jumpForce : 0;
+            float forceY = 0;
+            if(InputManager.GetJumpDown())
+            {
+                RaycastHit rh;
+                if(Physics.Raycast(transform.position, Vector3.down, out rh, 1, 1 << LayerMask.NameToLayer("Ground")))
+                {
+                    forceY = jumpForce;
+                }
+            }
+
+            if (forceX != 0 || forceZ != 0)
+            {
+                if (!runSound.isPlaying)
+                    runSound.Play();
+            }
+            else
+                runSound.Stop();
+
         
             rb.velocity = new Vector3(forceX * playerSpeed, rb.velocity.y + forceY, forceZ * playerSpeed);
         }
@@ -104,6 +125,12 @@ public class PlayerController : NetworkBehaviour {
         if (thrown.GetComponent<Weapon>().type == WeaponType.Rock) {
             thrown.GetComponent<Weapon>().rockRot = new Vector3(Random.Range(-1f,1f), Random.Range(-1f,1f), Random.Range(-1f,1f));
         }
+        AudioSource g = player.transform.Find("ThrowSounds").GetComponent<AudioSource>();
+
+        g.clip = throwSounds[Random.Range(0, throwSounds.Length)];
+        g.pitch = Random.Range(0.9f, 1.1f);
+        g.Play();
+
     }
 
     [Command]
