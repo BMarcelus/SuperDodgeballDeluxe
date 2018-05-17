@@ -31,6 +31,9 @@ public class GameManager : MonoBehaviour {
     public Color playerColor;
     public string playerName;
 
+    public Vector2 cameraFovClamp;
+    public float cameraFov = 60;
+
     Configuration config;
 
     void Awake() {
@@ -57,6 +60,8 @@ public class GameManager : MonoBehaviour {
             config = MakeDefaultConfig(true);
             config.SaveToFile(SETTINGS_FILENAME);
         }
+
+        Camera.main.fieldOfView = cameraFov;
 
         canvas.GetComponent<MenuUIManager>().PlayIntro();
     }
@@ -127,7 +132,8 @@ public class GameManager : MonoBehaviour {
     void ApplyOptionsSettings(GameSettings settings) {
         Screen.SetResolution(settings.resolutionX, settings.resolutionY, settings.fullscreen);
         QualitySettings.SetQualityLevel(settings.gfxPreset, true);
-        Camera.main.fieldOfView = settings.fov;
+        cameraFov = settings.fov;
+        Camera.main.fieldOfView = cameraFov;
         mouseSensitivity.x = settings.mouseSensitivityX;
         mouseSensitivity.y = settings.mouseSensitivityY;
         musicManager.musicVolume = settings.musicVolume;

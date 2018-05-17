@@ -11470,6 +11470,8 @@ MonoBehaviour:
   mouseSensitivity: {x: 0, y: 0}
   playerColor: {r: 0, g: 0, b: 0, a: 0}
   playerName: 
+  cameraFovClamp: {x: 50, y: 100}
+  cameraFov: 60
 --- !u!4 &728289671
 Transform:
   m_ObjectHideFlags: 0

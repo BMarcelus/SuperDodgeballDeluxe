@@ -184,6 +184,9 @@ public class MenuUIManager : MonoBehaviour {
         foreach (Button b in controlButtons) {
             b.GetComponent<Image>().color = Color.white;
         }
+
+        fovSlider.minValue = gm.cameraFovClamp.x;
+        fovSlider.maxValue = gm.cameraFovClamp.y;
     }
 
     public void Options_BackPressed() {

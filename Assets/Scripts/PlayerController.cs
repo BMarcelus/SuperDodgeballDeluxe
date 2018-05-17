@@ -15,6 +15,7 @@ public class PlayerController : NetworkBehaviour {
     public GameObject serverHandPosition;
     public GameObject clientHandPosition;
     public GameObject cameraPosition;
+    float clientHandMinZ = 0.7f, clientHandMaxZ = 1.1f;
 
     public float playerSpeed;
     public float jumpForce;
@@ -27,6 +28,7 @@ public class PlayerController : NetworkBehaviour {
     float camRotationX;
 
     float curPower = 0;
+    float fovAdd = 10;
 
     Rigidbody rb;
 
@@ -54,7 +56,7 @@ public class PlayerController : NetworkBehaviour {
         {
             if (curPower < 1000)
                 curPower += 25;
-            camera.fieldOfView = Mathf.Lerp(60, 70, curPower / 1000f);
+            camera.fieldOfView = Mathf.Lerp(gm.cameraFov, gm.cameraFov + fovAdd, curPower / 1000f);
             if(!throwSound.isPlaying && curPower < 1000)
             {
                 CmdPlayerWindUpSound(true);
@@ -62,11 +64,11 @@ public class PlayerController : NetworkBehaviour {
             else if(curPower >= 1000)
                 CmdPlayerWindUpSound(false);
         }
-		else if (InputManager.GetFire1Up()) {
+		else if (InputManager.GetFire1Up() && currentWeaponObject) {
             // Raycast to weapon spawn pos, ignoring self. If no hit, throw weapon, else don't (prevents throwing inside a wall and losing it)
             RaycastHit hit;
             Physics.Raycast(camera.transform.position, camera.transform.forward, out hit, 1);
-            if (!hit.collider && currentWeaponObject) {
+            if (!hit.collider) {
                 Vector3 pos = camera.transform.position + camera.transform.forward;
                 Vector3 force = camera.transform.forward * curPower;
                 CmdFireWeapon(gameObject, pos, force);
@@ -74,12 +76,12 @@ public class PlayerController : NetworkBehaviour {
             else
             {
                 //Should just drop it if you're facing a wall
-                Vector3 pos = camera.transform.position;
-                Vector3 force = Vector3.zero;
-                CmdFireWeapon(gameObject, pos, force);
+                //Vector3 pos = camera.transform.position;
+                //Vector3 force = Vector3.zero;
+                //CmdFireWeapon(gameObject, pos, force);
             }
             curPower = 0;
-            camera.fieldOfView = 60;
+            camera.fieldOfView = gm.cameraFov;
         }
 
         if (!isDying) {
@@ -234,7 +236,9 @@ public class PlayerController : NetworkBehaviour {
 
         if (isLocalPlayer) {
             weapon.transform.SetParent(player.GetComponent<PlayerController>().camera.transform);
-            weapon.transform.localPosition = pc.clientHandPosition.transform.localPosition;
+            Vector3 clientPos = pc.clientHandPosition.transform.localPosition;
+            clientPos = new Vector3(clientPos.x, clientPos.y, Mathf.Lerp(clientHandMinZ, clientHandMaxZ, (gm.cameraFovClamp.y - gm.cameraFov)/(gm.cameraFovClamp.x - gm.cameraFov)));
+            weapon.transform.localPosition = clientPos;
             weapon.transform.localRotation = Quaternion.identity;
         } else {
             weapon.transform.SetParent(player.transform);
@@ -261,8 +265,9 @@ public class PlayerController : NetworkBehaviour {
         // Nab and set up the main camera (on client-side there will only ever be one camera, having cameras on player prefabs becomes an issue)
         camera = Camera.main;
         camera.transform.SetParent(transform);
-        camera.GetComponent<CameraCommander>().DoSomeShake(false);
-        camera.GetComponent<CameraCommander>().DoRotate(false);;
+        //camera.GetComponent<CameraCommander>().DoSomeShake(false);
+        //camera.GetComponent<CameraCommander>().DoRotate(false);
+        camera.GetComponent<CameraCommander>().enabled = false;
         camera.transform.localPosition = cameraPosition.transform.localPosition;
         camera.transform.localRotation = Quaternion.identity; // Camera rotation wouldn't line up with the player otherwise
 
@@ -317,8 +322,8 @@ public class PlayerController : NetworkBehaviour {
         isDying = true;
 
         camera.transform.SetParent(null);
-        camera.GetComponent<CameraCommander>().StareAtObject(gameObject);
-        camera.GetComponent<CameraCommander>().DoSomeShake(true);
+        //camera.GetComponent<CameraCommander>().StareAtObject(gameObject);
+        //camera.GetComponent<CameraCommander>().DoSomeShake(true);
         GetComponent<MeshRenderer>().enabled = true;
         visor.GetComponent<MeshRenderer>().enabled = true;
         
@@ -335,8 +340,8 @@ public class PlayerController : NetworkBehaviour {
         currentWeaponObject = null;
 
         camera.transform.SetParent(transform);
-        camera.GetComponent<CameraCommander>().StareAtObject(null);
-        camera.GetComponent<CameraCommander>().DoSomeShake(false);
+        //camera.GetComponent<CameraCommander>().StareAtObject(null);
+        //camera.GetComponent<CameraCommander>().DoSomeShake(false);
         camera.transform.localPosition = cameraPosition.transform.localPosition;
         camera.transform.localRotation = Quaternion.identity;
         GetComponent<MeshRenderer>().enabled = false;
