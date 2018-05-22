@@ -41,6 +41,10 @@ public class PlayerController : NetworkBehaviour {
 		rb = GetComponent<Rigidbody>();
         gm = GameManager.instance;
         throwSound = transform.Find("ThrowSounds").GetComponent<AudioSource>();
+
+        runSound.volume *= gm.audioManager.sfxVolume;
+        throwSound.volume *= gm.audioManager.sfxVolume;
+        jumpSound.volume *= gm.audioManager.sfxVolume;
     }
 	
 	void Update () {
@@ -270,7 +274,7 @@ public class PlayerController : NetworkBehaviour {
                 player.gameObject.layer = LayerMask.NameToLayer("OtherPlayer");
             }
         }
-        gm.musicManager.StopMusic();
+        gm.audioManager.StopMusic();
         gm.blackFade.ClearColor();
         // Nab and set up the main camera (on client-side there will only ever be one camera, having cameras on player prefabs becomes an issue)
         camera = Camera.main;

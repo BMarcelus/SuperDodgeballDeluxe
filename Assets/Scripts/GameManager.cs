@@ -29,7 +29,7 @@ public class GameManager : MonoBehaviour {
 
     public Canvas canvas; // Ref here so no UI elements have to GameObject.Find it every time
 
-    public MusicManager musicManager;
+    public AudioManager audioManager;
     public GameObject screenFaderPrefab;
     public ScreenFader blackFade;
 
@@ -196,8 +196,8 @@ public class GameManager : MonoBehaviour {
         Camera.main.fieldOfView = cameraFov;
         mouseSensitivity.x = settings.mouseSensitivityX;
         mouseSensitivity.y = settings.mouseSensitivityY;
-        musicManager.musicVolume = settings.musicVolume;
-        // TODO SFX AND CROWD VOLUMES
+        audioManager.musicVolume = settings.musicVolume;
+        audioManager.sfxVolume = settings.sfxVolume;
     }
 
     public void SetOptionPlayer(GameSettings settings) {
