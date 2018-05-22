@@ -2,12 +2,15 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class MusicManager : MonoBehaviour {
+public class AudioManager : MonoBehaviour {
     
     public AudioClip introMusClip, menuMusClip;
 
     [Range(0f, 2f)]
     public float musicVolume;
+
+    [Range(0f, 2f)]
+    public float sfxVolume;
 
     AudioSource introSource, musicSource;
 

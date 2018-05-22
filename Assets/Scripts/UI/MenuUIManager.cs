@@ -114,8 +114,8 @@ public class MenuUIManager : MonoBehaviour {
                     StopCoroutine(introCoroutine);
                     animator.speed = Mathf.Infinity;
                     Camera.main.GetComponent<CameraCommander>().enabled = true;
-                    gm.musicManager.StopIntro();
-                    gm.musicManager.PlayMenuMusic();
+                    gm.audioManager.StopIntro();
+                    gm.audioManager.PlayMenuMusic();
                     flashStartToPlayCoroutine = StartCoroutine(FlashStartToPlayCoroutine());
                 }
             }
@@ -330,11 +330,11 @@ public class MenuUIManager : MonoBehaviour {
     }
 
     public void Options_MusicSliderChanged(float value) {
-        gm.musicManager.musicVolume = value;
+        gm.audioManager.musicVolume = value;
     }
 
     public void Options_SFXSliderChanged(float value) {
-        // TODO change volume levels when SFX becomes a thing
+        gm.audioManager.sfxVolume = value;
     }
 
     public void Options_CrowdSliderChanged(float value) {
@@ -595,14 +595,14 @@ public class MenuUIManager : MonoBehaviour {
         animator.speed = 0;
 
         yield return new WaitForSeconds(0.8f); // Needs a delay so the game doesn't stutter, feel free to adjust
-        gm.musicManager.PlayIntroMusic();
+        gm.audioManager.PlayIntroMusic();
         animator.speed = 1;
 
         yield return new WaitForSeconds(3.1f);
         Camera.main.GetComponent<CameraCommander>().enabled = true;
         yield return new WaitForSeconds(2f);
-        gm.musicManager.StopIntro();
-        gm.musicManager.PlayMenuMusic();
+        gm.audioManager.StopIntro();
+        gm.audioManager.PlayMenuMusic();
         yield return new WaitForSeconds(1f);
         introPlayed = true;
         flashStartToPlayCoroutine = StartCoroutine(FlashStartToPlayCoroutine());

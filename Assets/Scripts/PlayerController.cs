@@ -41,6 +41,10 @@ public class PlayerController : NetworkBehaviour {
 		rb = GetComponent<Rigidbody>();
         gm = GameManager.instance;
         throwSound = transform.Find("ThrowSounds").GetComponent<AudioSource>();
+
+        runSound.volume *= gm.audioManager.sfxVolume;
+        throwSound.volume *= gm.audioManager.sfxVolume;
+        jumpSound.volume *= gm.audioManager.sfxVolume;
     }
 	
 	void Update () {
@@ -106,7 +110,7 @@ public class PlayerController : NetworkBehaviour {
 
                 bool foundGround = false;
                 foreach (RaycastHit h in rhs) {
-                    if (h.collider.gameObject.layer != LayerMask.NameToLayer("LocalPlayer")) {
+                    if (h.collider.gameObject.layer != LayerMask.NameToLayer("LocalPlayer") && h.collider.gameObject.layer != LayerMask.NameToLayer("Weapon")) {
                         foundGround = true;
                         break;
                     }
@@ -218,6 +222,7 @@ public class PlayerController : NetworkBehaviour {
         thrown.GetComponent<Weapon>().isHeld = false;
         thrown.GetComponent<Weapon>().isThrown = true;
         thrown.GetComponent<Weapon>().lastHeld = player;
+        thrown.GetComponent<Weapon>().impactSound.volume =  gm.audioManager.sfxVolume / 2f;
 
         if (thrown.GetComponent<Weapon>().type == WeaponType.Rock) {
             thrown.GetComponent<Weapon>().rockRot = new Vector3(Random.Range(-1f,1f), Random.Range(-1f,1f), Random.Range(-1f,1f));
@@ -227,6 +232,7 @@ public class PlayerController : NetworkBehaviour {
         //First sounds is reserved for wind up sound
         g.clip = throwSoundList[Random.Range(1, throwSoundList.Length)];
         g.pitch = Random.Range(0.9f, 1.1f);
+        g.volume = gm.audioManager.sfxVolume / 2f;
         g.Play();
 
     }
@@ -257,7 +263,9 @@ public class PlayerController : NetworkBehaviour {
         }
 
         //Gets the PickUpCylinder of the player picking up the item and Plays the Pick-Up Sound stored there
-        player.transform.Find("PickupItemCylinder").GetComponent<AudioSource>().Play();
+        AudioSource g = player.transform.Find("PickupItemCylinder").GetComponent<AudioSource>();
+        g.volume = gm.audioManager.sfxVolume / 2f;
+        g.Play();
     }
 
     public override void OnStartLocalPlayer() {
@@ -270,7 +278,7 @@ public class PlayerController : NetworkBehaviour {
                 player.gameObject.layer = LayerMask.NameToLayer("OtherPlayer");
             }
         }
-        gm.musicManager.StopMusic();
+        gm.audioManager.StopMusic();
         gm.blackFade.ClearColor();
         // Nab and set up the main camera (on client-side there will only ever be one camera, having cameras on player prefabs becomes an issue)
         camera = Camera.main;
@@ -353,7 +361,6 @@ public class PlayerController : NetworkBehaviour {
             camera.transform.rotation = Quaternion.identity;
             camera.GetComponent<CameraCommander>().DoSomeShake(true);
         }
-        
     }
 
     async void RespawnSelf() {

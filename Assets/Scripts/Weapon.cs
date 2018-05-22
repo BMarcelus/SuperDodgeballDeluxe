@@ -12,7 +12,7 @@ public class Weapon : NetworkBehaviour {
     public GameObject lastHeld;
     public float rockRotSpeed, scissorRotSpeed;
     public Vector3 rockRot; // Set to random by player on throw
-    private AudioSource impactSound;
+    public AudioSource impactSound;
 
     void Start()
     {
