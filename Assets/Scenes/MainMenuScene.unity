@@ -4641,6 +4641,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   introMusClip: {fileID: 8300000, guid: 25635af471b79b24c9df9e99d1a0efd8, type: 3}
   menuMusClip: {fileID: 8300000, guid: 41249e2230e7f284f998a31b85d24381, type: 3}
+  inGameMusClip: {fileID: 8300000, guid: 23fa58c6dd5c48a4eb8fa8ee0611daee, type: 3}
   musicVolume: 0.5
   sfxVolume: 0
 --- !u!4 &315315781
@@ -11401,6 +11402,7 @@ MonoBehaviour:
   cameraFov: 60
   gameScenes:
   - LevelDesign
+  - LevelIttai'sDumb
   chosenGameScene: 
   gameInProgress: 0
 --- !u!4 &728289671
