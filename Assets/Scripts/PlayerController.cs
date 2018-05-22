@@ -274,6 +274,7 @@ public class PlayerController : NetworkBehaviour {
         gm.blackFade.ClearColor();
         // Nab and set up the main camera (on client-side there will only ever be one camera, having cameras on player prefabs becomes an issue)
         camera = Camera.main;
+        camera.fieldOfView = gm.cameraFov;
         camera.transform.SetParent(transform);
         //camera.GetComponent<CameraCommander>().DoSomeShake(false);
         //camera.GetComponent<CameraCommander>().DoRotate(false);
