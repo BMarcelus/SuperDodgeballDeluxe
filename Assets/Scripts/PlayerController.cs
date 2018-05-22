@@ -110,7 +110,7 @@ public class PlayerController : NetworkBehaviour {
 
                 bool foundGround = false;
                 foreach (RaycastHit h in rhs) {
-                    if (h.collider.gameObject.layer != LayerMask.NameToLayer("LocalPlayer")) {
+                    if (h.collider.gameObject.layer != LayerMask.NameToLayer("LocalPlayer") && h.collider.gameObject.layer != LayerMask.NameToLayer("Weapon")) {
                         foundGround = true;
                         break;
                     }
@@ -357,7 +357,6 @@ public class PlayerController : NetworkBehaviour {
             camera.transform.rotation = Quaternion.identity;
             camera.GetComponent<CameraCommander>().DoSomeShake(true);
         }
-        
     }
 
     async void RespawnSelf() {
