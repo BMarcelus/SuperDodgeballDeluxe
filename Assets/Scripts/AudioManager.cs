@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class AudioManager : MonoBehaviour {
     
-    public AudioClip introMusClip, menuMusClip;
+    public AudioClip introMusClip, menuMusClip, inGameMusClip;
 
     [Range(0f, 2f)]
     public float musicVolume;
@@ -34,6 +34,10 @@ public class AudioManager : MonoBehaviour {
         musicSource.Play();
     }
 
+    public void PlayInGameMusic() {
+        musicSource.clip = inGameMusClip;
+        musicSource.Play();
+    }
     void Update() {
         introSource.volume = musicVolume;
         musicSource.volume = musicVolume;

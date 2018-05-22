@@ -275,6 +275,7 @@ public class PlayerController : NetworkBehaviour {
             }
         }
         gm.audioManager.StopMusic();
+        gm.audioManager.PlayInGameMusic();
         gm.blackFade.ClearColor();
         // Nab and set up the main camera (on client-side there will only ever be one camera, having cameras on player prefabs becomes an issue)
         camera = Camera.main;
