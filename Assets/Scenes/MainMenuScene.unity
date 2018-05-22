@@ -11390,7 +11390,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   canvas: {fileID: 0}
-  audioManager: {fileID: 0}
+  audioManager: {fileID: 315315780}
   screenFaderPrefab: {fileID: 1686796552568906, guid: a2964fc6d3f57d741af87249d8a3fefa,
     type: 2}
   blackFade: {fileID: 0}

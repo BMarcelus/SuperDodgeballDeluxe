@@ -222,6 +222,7 @@ public class PlayerController : NetworkBehaviour {
         thrown.GetComponent<Weapon>().isHeld = false;
         thrown.GetComponent<Weapon>().isThrown = true;
         thrown.GetComponent<Weapon>().lastHeld = player;
+        thrown.GetComponent<Weapon>().impactSound.volume =  gm.audioManager.sfxVolume / 2f;
 
         if (thrown.GetComponent<Weapon>().type == WeaponType.Rock) {
             thrown.GetComponent<Weapon>().rockRot = new Vector3(Random.Range(-1f,1f), Random.Range(-1f,1f), Random.Range(-1f,1f));
@@ -231,6 +232,7 @@ public class PlayerController : NetworkBehaviour {
         //First sounds is reserved for wind up sound
         g.clip = throwSoundList[Random.Range(1, throwSoundList.Length)];
         g.pitch = Random.Range(0.9f, 1.1f);
+        g.volume = gm.audioManager.sfxVolume / 2f;
         g.Play();
 
     }
@@ -261,7 +263,9 @@ public class PlayerController : NetworkBehaviour {
         }
 
         //Gets the PickUpCylinder of the player picking up the item and Plays the Pick-Up Sound stored there
-        player.transform.Find("PickupItemCylinder").GetComponent<AudioSource>().Play();
+        AudioSource g = player.transform.Find("PickupItemCylinder").GetComponent<AudioSource>();
+        g.volume = gm.audioManager.sfxVolume / 2f;
+        g.Play();
     }
 
     public override void OnStartLocalPlayer() {
