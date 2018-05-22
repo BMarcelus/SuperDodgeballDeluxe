@@ -297,10 +297,15 @@ public class PlayerController : NetworkBehaviour {
         Weapon weapon = collider.GetComponent<Weapon>();
         if (collider.tag == "Weapon" && weapon && !weapon.isHeld && !isDying) {
             if (weapon.isThrown) {
-                // Got hit -- ignore if from self, kill otherwise
+                // Got hit -- ignore if from self
                 if (weapon.lastHeld && weapon.lastHeld != gameObject) {
-                    Debug.LogError("PLAYER " + name + " WAS KNOCKED OUT BY " + weapon.lastHeld.name + "!");
-                    RespawnSelf();
+                    if (RockPaperScissors(weapon.type, currentWeaponObject ? currentWeaponObject.GetComponent<Weapon>().type : WeaponType.None) == 0) {
+                        Debug.LogError("PLAYER " + name + " WAS KNOCKED OUT BY " + weapon.lastHeld.name + "!");
+                        RespawnSelf();
+                    } else {
+                        // Do nothing I guess
+                    }
+                    
                 }
                 //RespawnSelf();
             } else {
@@ -318,6 +323,25 @@ public class PlayerController : NetworkBehaviour {
             // For now, there is no kill state - just bring the player back
             RespawnSelf();
         }
+    }
+
+    /// <summary>
+    /// Returns 0 if the left side wins, else returns 1 if the right side wins, else returns -1 if it's a tie.
+    /// </summary>
+    int RockPaperScissors(WeaponType weapon1, WeaponType weapon2) {
+        if (weapon1 == WeaponType.None)
+            return 1;
+        if (weapon2 == WeaponType.None)
+            return 0;
+        if (weapon1 == weapon2)
+            return -1;
+
+        if ((weapon1 == WeaponType.Rock && weapon2 == WeaponType.Scissors) || (weapon1 == WeaponType.Paper && weapon2 == WeaponType.Rock) || (weapon1 == WeaponType.Scissors || weapon2 == WeaponType.Paper))
+            return 0;
+        if ((weapon2 == WeaponType.Rock && weapon1 == WeaponType.Scissors) || (weapon2 == WeaponType.Paper && weapon1 == WeaponType.Rock) || (weapon2 == WeaponType.Scissors || weapon1 == WeaponType.Paper))
+            return 1;
+
+        return -1;
     }
 
     void OnDestroy() {

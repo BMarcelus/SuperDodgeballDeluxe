@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 
-public enum WeaponType { Rock, Paper, Scissors };
+public enum WeaponType { Rock, Paper, Scissors, None };
 
 public class Weapon : NetworkBehaviour {
     public bool isHeld;
