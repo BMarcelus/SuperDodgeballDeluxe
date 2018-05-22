@@ -336,9 +336,10 @@ public class PlayerController : NetworkBehaviour {
         if (weapon1 == weapon2)
             return -1;
 
-        if ((weapon1 == WeaponType.Rock && weapon2 == WeaponType.Scissors) || (weapon1 == WeaponType.Paper && weapon2 == WeaponType.Rock) || (weapon1 == WeaponType.Scissors || weapon2 == WeaponType.Paper))
+        if ((weapon1 == WeaponType.Rock && weapon2 == WeaponType.Scissors) || (weapon1 == WeaponType.Paper && weapon2 == WeaponType.Rock) || (weapon1 == WeaponType.Scissors && weapon2 == WeaponType.Paper))
             return 0;
-        if ((weapon2 == WeaponType.Rock && weapon1 == WeaponType.Scissors) || (weapon2 == WeaponType.Paper && weapon1 == WeaponType.Rock) || (weapon2 == WeaponType.Scissors || weapon1 == WeaponType.Paper))
+        
+        if ((weapon1 == WeaponType.Scissors && weapon2 == WeaponType.Rock) || (weapon1 == WeaponType.Rock && weapon2 == WeaponType.Paper) || (weapon1 == WeaponType.Paper && weapon2 == WeaponType.Scissors))
             return 1;
 
         return -1;
