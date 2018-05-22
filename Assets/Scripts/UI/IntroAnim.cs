@@ -33,7 +33,7 @@ public class IntroAnim : MonoBehaviour {
                 currentAnimator.speed = Mathf.Infinity;
                 Camera.main.GetComponent<CameraCommander>().enabled = true;
                 GetComponent<AudioSource>().Stop();
-                GameManager.instance.musicManager.PlayMenuMusic();
+                GameManager.instance.audioManager.PlayMenuMusic();
                 //GameManager.instance.UI_FlashStartToPlay();
             }
         }
