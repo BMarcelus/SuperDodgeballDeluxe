@@ -2,7 +2,9 @@
 using System.IO;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 using SharpConfig; // https://github.com/cemdervis/SharpConfig for documentation
 
 // Same as InputManager's InputKeys struct - just a handy tool for passing around settings info
@@ -19,13 +21,17 @@ public struct GameSettings {
 
 public class GameManager : MonoBehaviour {
 
+    public const string SETTINGS_FILENAME = "settings.cfg";
+    public const short REQSCENEINDEX = 1000;
+    public const short GETSCENEINDEX = 1001;
+
     public static GameManager instance;
+
     public Canvas canvas; // Ref here so no UI elements have to GameObject.Find it every time
 
     public MusicManager musicManager;
+    public GameObject screenFaderPrefab;
     public ScreenFader blackFade;
-
-    const string SETTINGS_FILENAME = "settings.cfg";
 
     public Vector2 mouseSensitivity;
     public Color playerColor;
@@ -34,36 +40,90 @@ public class GameManager : MonoBehaviour {
     public Vector2 cameraFovClamp;
     public float cameraFov = 60;
 
+    public List<string> gameScenes;
+    public string chosenGameScene = "";
+
     Configuration config;
+
+    public bool gameInProgress;
 
     void Awake() {
         // Singleton stuff, needs to carry across multiple scenes
-        if (instance != null && instance != this)
+        if (instance != null && instance != this) {
             Destroy(gameObject);
+            return;
+        }
         instance = this;
         DontDestroyOnLoad(gameObject);
         
-        canvas = GameObject.Find("Canvas").GetComponent<Canvas>();
+        //canvas = GameObject.Find("Canvas").GetComponent<Canvas>();
         
-        // Read config file -- if none exists, make one
-        try {
-            config = Configuration.LoadFromFile(SETTINGS_FILENAME);
-            // Set settings
-            GameSettings s = ConfigurationToGameSettings(config);
-            ApplyOptionsSettings(s);
-            ApplyPlayerSettings(s);
-            // Set controls
-            InputKeys k = ConfigurationToInputKeys(config);
-            InputManager.SetKeys(k);
-        } catch (FileNotFoundException) {
-            Debug.Log("No config file '" + SETTINGS_FILENAME + "' found. Making one with defaults!");
-            config = MakeDefaultConfig(true);
-            config.SaveToFile(SETTINGS_FILENAME);
+        if (gameInProgress) {
+            Camera.main.fieldOfView = cameraFov;
+        } else {
+            // At main menu / first boot, do the song and dance
+
+            SceneManager.sceneLoaded += OnSceneLoad;
+            canvas = GameObject.Find("Canvas").GetComponent<Canvas>();
+            if (blackFade == null) {
+                blackFade = Instantiate(screenFaderPrefab).GetComponent<ScreenFader>();
+                blackFade.transform.SetParent(canvas.transform);
+                blackFade.transform.localPosition = Vector3.zero;
+                blackFade.GetComponent<RectTransform>().sizeDelta = new Vector2(canvas.GetComponent<CanvasScaler>().referenceResolution.x, canvas.GetComponent<CanvasScaler>().referenceResolution.y); // Double what it needs but that's ok
+                blackFade.transform.SetSiblingIndex(0);
+            }
+            // Read config file -- if none exists, make one
+            try {
+                config = Configuration.LoadFromFile(SETTINGS_FILENAME);
+                // Set settings
+                GameSettings s = ConfigurationToGameSettings(config);
+                ApplyOptionsSettings(s);
+                ApplyPlayerSettings(s);
+                // Set controls
+                InputKeys k = ConfigurationToInputKeys(config);
+                InputManager.SetKeys(k);
+            } catch (FileNotFoundException) {
+                Debug.Log("No config file '" + SETTINGS_FILENAME + "' found. Making one with defaults!");
+                config = MakeDefaultConfig(true);
+                config.SaveToFile(SETTINGS_FILENAME);
+            }
+
+            Camera.main.fieldOfView = cameraFov;
+            
+            canvas.GetComponent<MenuUIManager>().PlayIntro();
         }
+    }
 
-        Camera.main.fieldOfView = cameraFov;
+    void OnSceneLoad(Scene scene, LoadSceneMode mode) {
+        canvas = GameObject.Find("Canvas").GetComponent<Canvas>();
+        if (blackFade == null) {
+            blackFade = Instantiate(screenFaderPrefab).GetComponent<ScreenFader>();
+            blackFade.transform.SetParent(canvas.transform);
+            blackFade.transform.localPosition = Vector3.zero;
+            blackFade.GetComponent<RectTransform>().sizeDelta = new Vector2(canvas.GetComponent<CanvasScaler>().referenceResolution.x, canvas.GetComponent<CanvasScaler>().referenceResolution.y); // Double what it needs but that's ok
+            blackFade.transform.SetSiblingIndex(0);
+        }
+        if (gameInProgress) {
+            if (!gameScenes.Contains(scene.name)) {
+                Debug.LogError("Game still running when loading a non-gameplay scene! Either add this scene to gameScenes or fix this error!");
+                return;
+            }
 
-        canvas.GetComponent<MenuUIManager>().PlayIntro();
+            ClientScene.Ready(CustomNetworkManager.instance.connToServer);
+            ClientScene.AddPlayer(0);
+        }
+    }
+
+    public void StartGameClient(NetworkClient client) {
+        CustomNetworkManager.instance.connToServer = client.connection;
+        gameInProgress = true;
+    }
+
+    public void PickRandomLevelAndPlay() {
+        // Flip a bool and hop into the game - the scene will load and check the bool, triggering the in-game setup stuff (check Awake)
+        gameInProgress = true;
+        chosenGameScene = gameScenes[Random.Range(0, gameScenes.Count)];
+        CustomNetworkManager.instance.onlineScene = chosenGameScene; // Don't call LoadScene afterwards, that gets handled automatically
     }
 
     ///////////////////////

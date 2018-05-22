@@ -66,6 +66,7 @@ public class MenuUIManager : MonoBehaviour {
     bool controlPressedCancelled;
 
     public void Start() {
+        gm = GameManager.instance;
         nm = CustomNetworkManager.instance;
 
         controlButtons = new List<Button>();
@@ -95,26 +96,28 @@ public class MenuUIManager : MonoBehaviour {
     }
 
     void Update() {
-        // Intro anim stuff
-        if (Input.anyKeyDown) {
-            if (introPlayed) {
-                if (!startToPlayPressed) {
-                    startToPlayPressed = true;
-                    StopCoroutine(flashStartToPlayCoroutine);
-                    startToPlayText.SetActive(false);
-                    introItems.SetActive(false);
-                    gm.blackFade.FadeFromTo(Color.clear, new Color(0,0,0,0.25f), 1);
-                    animator.speed = 1;
-                    animator.Play("UI_PressStart");
+        if (!gm.gameInProgress) {
+            // Intro anim stuff
+            if (Input.anyKeyDown) {
+                if (introPlayed) {
+                    if (!startToPlayPressed) {
+                        startToPlayPressed = true;
+                        StopCoroutine(flashStartToPlayCoroutine);
+                        startToPlayText.SetActive(false);
+                        introItems.SetActive(false);
+                        gm.blackFade.FadeFromTo(Color.clear, new Color(0,0,0,0.25f), 1);
+                        animator.speed = 1;
+                        animator.Play("UI_PressStart");
+                    }
+                } else {
+                    introPlayed = true;
+                    StopCoroutine(introCoroutine);
+                    animator.speed = Mathf.Infinity;
+                    Camera.main.GetComponent<CameraCommander>().enabled = true;
+                    gm.musicManager.StopIntro();
+                    gm.musicManager.PlayMenuMusic();
+                    flashStartToPlayCoroutine = StartCoroutine(FlashStartToPlayCoroutine());
                 }
-            } else {
-                introPlayed = true;
-                StopCoroutine(introCoroutine);
-                animator.speed = Mathf.Infinity;
-                Camera.main.GetComponent<CameraCommander>().enabled = true;
-                gm.musicManager.StopIntro();
-                gm.musicManager.PlayMenuMusic();
-                flashStartToPlayCoroutine = StartCoroutine(FlashStartToPlayCoroutine());
             }
         }
     }
@@ -433,11 +436,12 @@ public class MenuUIManager : MonoBehaviour {
         } else {
             nm.networkAddress = lanIPInputField.text;
         }
-        nm.StartHost();
-
         lanMenuPanel.SetActive(false);
         lanBackButton.gameObject.SetActive(false);
         lanConnectingPanel.SetActive(true);
+
+        NetworkClient client = nm.StartHost();
+        CustomNetworkManager.instance.connToServer = client.connection;
     }
 
     public void Lan_JoinPressed() {
@@ -446,12 +450,13 @@ public class MenuUIManager : MonoBehaviour {
         } else {
             nm.networkAddress = lanIPInputField.text;
         }
-        NetworkClient client = nm.StartClient();
-
         lanMenuPanel.SetActive(false);
         lanBackButton.gameObject.SetActive(false);
         lanConnectingPanel.SetActive(true);
-        StartCoroutine(HideLanConnectingPanel(client));
+
+        NetworkClient client = nm.StartClient();
+
+        StartCoroutine(ClientJoinedCoroutine(client));
     }
 
     public void Lan_CancelPressed() {
@@ -463,12 +468,14 @@ public class MenuUIManager : MonoBehaviour {
         lanConnectingPanel.SetActive(false);
     }
 
-    IEnumerator HideLanConnectingPanel(NetworkClient client) {
+    IEnumerator ClientJoinedCoroutine(NetworkClient client) {
         // There's no callback for a successful LAN client connection that I found, so this'll have to do
         yield return new WaitUntil(delegate {
             return client.isConnected || !lanConnectingPanel.activeSelf;
         });
         lanConnectingPanel.SetActive(false);
+        if (client.isConnected)
+            gm.StartGameClient(client);
     }
 
     //////////////////////////////

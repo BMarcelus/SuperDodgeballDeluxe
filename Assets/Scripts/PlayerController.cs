@@ -100,8 +100,18 @@ public class PlayerController : NetworkBehaviour {
             if(InputManager.GetJumpDown())
             {
                 //Check to make sure the player is grouded before allowing them to jump
-                RaycastHit rh;
-                if(Physics.Raycast(transform.position, Vector3.down, out rh, 1, 1 << LayerMask.NameToLayer("Ground")))
+                RaycastHit[] rhs = Physics.SphereCastAll(
+                    new Vector3(transform.position.x, transform.position.y - 0.49f, transform.position.z),
+                    0.5f, Vector3.down, 0.02f);
+
+                bool foundGround = false;
+                foreach (RaycastHit h in rhs) {
+                    if (h.collider.gameObject.layer != LayerMask.NameToLayer("LocalPlayer")) {
+                        foundGround = true;
+                        break;
+                    }
+                }
+                if (foundGround)
                 {
                     forceY = jumpForce;
                     CmdPlayerJumpSound(true);
@@ -253,7 +263,7 @@ public class PlayerController : NetworkBehaviour {
     public override void OnStartLocalPlayer() {
         gm = GameManager.instance;
         uiManager = gm.canvas.GetComponent<MenuUIManager>();
-        uiManager.HideThingsOnJoined();
+        //uiManager.HideThingsOnJoined();
 
         foreach (PlayerController player in FindObjectsOfType<PlayerController>()) {
             if (player.gameObject != gameObject) {
@@ -311,10 +321,13 @@ public class PlayerController : NetworkBehaviour {
     }
 
     void OnDestroy() {
-        camera.transform.SetParent(null);
-        camera.transform.position = camera.GetComponent<CameraCommander>().originalPos;
-        camera.transform.rotation = Quaternion.identity;
-        camera.GetComponent<CameraCommander>().DoSomeShake(true);
+        if (camera) {
+            camera.transform.SetParent(null);
+            camera.transform.position = camera.GetComponent<CameraCommander>().originalPos;
+            camera.transform.rotation = Quaternion.identity;
+            camera.GetComponent<CameraCommander>().DoSomeShake(true);
+        }
+        
     }
 
     async void RespawnSelf() {
