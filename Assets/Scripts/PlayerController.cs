@@ -11,7 +11,10 @@ public class PlayerController : NetworkBehaviour {
 
     [SyncVar]
     public GameObject currentWeaponObject;
+    [SyncVar]
+    public Color playerColor;
 
+    public GameObject mesh;
     public GameObject visor;
     public GameObject serverHandPosition;
     public GameObject clientHandPosition;
@@ -20,6 +23,7 @@ public class PlayerController : NetworkBehaviour {
     float clientHandMinZ = 0.7f, clientHandMaxZ = 1.1f;
 
     public float weaponShakeIntensity;
+    public float weaponForceMultiplier, weaponMaxForce;
 
     public float playerSpeed;
     public float jumpForce;
@@ -31,7 +35,7 @@ public class PlayerController : NetworkBehaviour {
 
     float camRotationX;
 
-    float curPower = 0;
+    float currentPower = 0;
     float fovAdd = 10;
     float shakeIntensity;
 
@@ -54,8 +58,9 @@ public class PlayerController : NetworkBehaviour {
     }
 	
     void FixedUpdate() {
-        if (charging && curPower < 1000)
-            curPower += 25;
+        // Framerate-independent power-up
+        if (charging && currentPower < weaponMaxForce)
+            currentPower += 25;
     }
 
 	void Update () {
@@ -71,23 +76,20 @@ public class PlayerController : NetworkBehaviour {
         {
             charging = true;
             
-            camera.fieldOfView = Mathf.Lerp(gm.cameraFov, gm.cameraFov + fovAdd, curPower / 1000f);
-            vignette.color = Color.Lerp(Color.clear, Color.white, curPower / 1300f);
-            shakeIntensity = Mathf.Lerp(0, weaponShakeIntensity, curPower / 1000f);
+            camera.fieldOfView = Mathf.Lerp(gm.cameraFov, gm.cameraFov + fovAdd, currentPower / weaponMaxForce);
+            vignette.color = Color.Lerp(Color.clear, Color.white, currentPower / weaponMaxForce*1.5f); // Denominator's a bit larger so vignette isn't as strong
+            shakeIntensity = Mathf.Lerp(0, weaponShakeIntensity, currentPower / weaponMaxForce);
 
-            if (weaponPos == null) {
-                weaponPos = clientHandPosition.transform.localPosition;
-            }
             currentWeaponObject.transform.localPosition = new Vector3(
                 weaponPos.x + Random.Range(-shakeIntensity, shakeIntensity),
                 weaponPos.y + Random.Range(-shakeIntensity, shakeIntensity),
                 weaponPos.z + Random.Range(-shakeIntensity, shakeIntensity));
 
-            if(!throwSound.isPlaying && curPower < 1000)
+            if(!throwSound.isPlaying && currentPower < weaponMaxForce)
             {
                 CmdPlayerWindUpSound(true);
             }
-            else if(curPower >= 1000)
+            else if(currentPower >= weaponMaxForce)
                 CmdPlayerWindUpSound(false);
         }
 		else if (InputManager.GetFire1Up() && currentWeaponObject) {
@@ -96,7 +98,7 @@ public class PlayerController : NetworkBehaviour {
             Physics.Raycast(camera.transform.position, camera.transform.forward, out hit, 1);
             if (!hit.collider) {
                 Vector3 pos = camera.transform.position + camera.transform.forward;
-                Vector3 force = camera.transform.forward * curPower;
+                Vector3 force = camera.transform.forward * currentPower * weaponForceMultiplier;
                 CmdFireWeapon(gameObject, pos, force);
             }
             else
@@ -107,7 +109,7 @@ public class PlayerController : NetworkBehaviour {
                 //CmdFireWeapon(gameObject, pos, force);
             }
             charging = false;
-            curPower = 0f;
+            currentPower = 0f;
             camera.fieldOfView = gm.cameraFov;
             vignette.color = Color.clear;
             shakeIntensity = 0f;
@@ -293,6 +295,22 @@ public class PlayerController : NetworkBehaviour {
         g.Play();
     }
 
+    [Command]
+    void CmdSetPlayerColors(GameObject them, Color theirColor) {
+        // SyncVar keeps screwing up and not being in sync... var
+        them.GetComponent<PlayerController>().playerColor = theirColor;
+
+        // Called when a player joins: go through players, set their colors
+        foreach (GameObject p in GameObject.FindGameObjectsWithTag("Player")) {
+            RpcSetPlayerColors(p);
+        }
+    }
+
+    [ClientRpc]
+    void RpcSetPlayerColors(GameObject them) {
+        them.GetComponent<PlayerController>().mesh.GetComponent<MeshRenderer>().material.color = them.GetComponent<PlayerController>().playerColor;
+    }
+
     public override void OnStartLocalPlayer() {
         gm = GameManager.instance;
 
@@ -318,7 +336,7 @@ public class PlayerController : NetworkBehaviour {
         clientHandPosition.transform.SetParent(camera.transform);
 
         // Hide player stuff on client
-        GetComponent<MeshRenderer>().enabled = false;
+        mesh.GetComponent<MeshRenderer>().enabled = false;
         visor.GetComponent<MeshRenderer>().enabled = false;
 
         // Set up vignette, crosshair
@@ -326,6 +344,9 @@ public class PlayerController : NetworkBehaviour {
         crosshair = GameObject.Find("Crosshair").GetComponent<Image>();
 
         crosshair.color = gm.crosshairColor;
+        playerColor = gm.playerColor;
+
+        CmdSetPlayerColors(gameObject, playerColor); // Check up w/ player's colors
     }
 
     void OnTriggerEnter(Collider collider) {
@@ -348,9 +369,11 @@ public class PlayerController : NetworkBehaviour {
                 }
                 //RespawnSelf();
             } else {
-                if (!currentWeaponObject) {
+                if (!currentWeaponObject && !weapon.isHeld) {
                     // Performs pickup on server
                     CmdPickUpWeapon(collider.gameObject, gameObject);
+                    currentWeaponObject = collider.gameObject; // Give us the weapon until server responds
+                    weapon.isHeld = true;
                 }
             }
         } else if (collider.tag == "Weapon" && !collider.GetComponent<Weapon>()) {
@@ -400,7 +423,7 @@ public class PlayerController : NetworkBehaviour {
         camera.transform.SetParent(null);
         //camera.GetComponent<CameraCommander>().StareAtObject(gameObject);
         //camera.GetComponent<CameraCommander>().DoSomeShake(true);
-        GetComponent<MeshRenderer>().enabled = true;
+        mesh.GetComponent<MeshRenderer>().enabled = true;
         visor.GetComponent<MeshRenderer>().enabled = true;
         
         if (currentWeaponObject) {
@@ -420,7 +443,7 @@ public class PlayerController : NetworkBehaviour {
         //camera.GetComponent<CameraCommander>().DoSomeShake(false);
         camera.transform.localPosition = cameraPosition.transform.localPosition;
         camera.transform.localRotation = Quaternion.identity;
-        GetComponent<MeshRenderer>().enabled = false;
+        mesh.GetComponent<MeshRenderer>().enabled = false;
         visor.GetComponent<MeshRenderer>().enabled = false;
 
         Transform respawnSpot = CustomNetworkManager.instance.startPositions[Random.Range(0, CustomNetworkManager.instance.startPositions.Count)];

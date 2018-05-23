@@ -14,6 +14,8 @@ public class Weapon : NetworkBehaviour {
     public Vector3 rockRot; // Set to random by player on throw
     public AudioSource impactSound;
 
+    Coroutine selfDestroyCoroutine;
+
     void Start()
     {
         impactSound = GetComponent<AudioSource>();
@@ -52,9 +54,11 @@ public class Weapon : NetworkBehaviour {
     }
 
     void OnCollisionEnter(Collision c) {
-
-        //If it collides with something that is not a player
-        if (isThrown && c.collider.gameObject.layer != LayerMask.NameToLayer("LocalPlayer") && c.collider.gameObject.layer != LayerMask.NameToLayer("OtherPlayer")) {
+        //If it collides with something that is not a player or weapon
+        if (isThrown &&
+                c.collider.gameObject.layer != LayerMask.NameToLayer("LocalPlayer") &&
+                c.collider.gameObject.layer != LayerMask.NameToLayer("OtherPlayer") &&
+                c.collider.gameObject.layer != LayerMask.NameToLayer("Weapon")) {
             lastHeld = null;
             isThrown = false;
             GetComponent<Rigidbody>().isKinematic = true;
@@ -62,6 +66,7 @@ public class Weapon : NetworkBehaviour {
             CmdSetPosition(); // Make sure every player has the exact server position when it stops, rotation doesn't really matter
             impactSound.pitch = Random.Range(0.9f, 1.1f);
             impactSound.Play();
+            selfDestroyCoroutine = StartCoroutine(DestroyAfterSeconds(15));
         }
     }
 
@@ -69,5 +74,15 @@ public class Weapon : NetworkBehaviour {
         if (c.gameObject.tag == "Bounds") {
             CmdDestroySelf();
         }
+        if ((c.gameObject.tag == "WeaponPickUp" || c.gameObject.tag == "Player") && selfDestroyCoroutine != null) {
+            StopCoroutine(selfDestroyCoroutine);
+            selfDestroyCoroutine = null;
+        }
+    }
+
+    IEnumerator DestroyAfterSeconds(float seconds) {
+        yield return new WaitForSeconds(seconds);
+        CmdDestroySelf();
+        selfDestroyCoroutine = null;
     }
 }
