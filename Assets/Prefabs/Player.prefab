@@ -847,6 +847,7 @@ MonoBehaviour:
   serverHandPosition: {fileID: 1574507426289550}
   clientHandPosition: {fileID: 1569099794397938}
   cameraPosition: {fileID: 1848885918893564}
+  weaponShakeIntensity: 0.1
   playerSpeed: 5
   jumpForce: 8
   runSound: {fileID: 82040376747270818}
@@ -858,6 +859,7 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 3681a1bfdbbe6df468f46c8043a2ac77, type: 3}
   - {fileID: 8300000, guid: e25502ce8836f064aa3e88c51619440d, type: 3}
   - {fileID: 8300000, guid: 27c1b8ce70ea5794c823efa8078585d5, type: 3}
+  throwSound: {fileID: 0}
   jumpSound: {fileID: 82651543846111026}
 --- !u!136 &136078415469289578
 CapsuleCollider:

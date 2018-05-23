@@ -15,7 +15,7 @@ public struct GameSettings {
     public float mouseSensitivityX, mouseSensitivityY;
     public float musicVolume, sfxVolume, crowdVolume;
     public int gfxPreset;
-    public Color playerColor;
+    public Color playerColor, crosshairColor;
     public string playerName;
 }
 
@@ -34,7 +34,7 @@ public class GameManager : MonoBehaviour {
     public ScreenFader blackFade;
 
     public Vector2 mouseSensitivity;
-    public Color playerColor;
+    public Color playerColor, crosshairColor;
     public string playerName;
 
     public Vector2 cameraFovClamp;
@@ -148,7 +148,10 @@ public class GameManager : MonoBehaviour {
             gfxPreset = cfg["Settings"]["GFXPreset"].IntValue
         };
         float[] c = config["Settings"]["PlayerColor"].FloatValueArray;
+        float[] c2 = config["Settings"]["CrosshairColor"].FloatValueArray;
         settings.playerColor = new Color(c[0], c[1], c[2]);
+        settings.crosshairColor = new Color(c2[0], c2[1], c2[2]);
+
         settings.playerName = config["Settings"]["PlayerName"].StringValue;
 
         return settings;
@@ -181,7 +184,9 @@ public class GameManager : MonoBehaviour {
 
         // Just take the settings we have now, so they don't get modified
         float[] c = config["Settings"]["PlayerColor"].FloatValueArray;
+        float[] c2 = config["Settings"]["CrosshairColor"].FloatValueArray;
         settings.playerColor = new Color(c[0], c[1], c[2]);
+        settings.crosshairColor = new Color(c2[0], c2[1], c2[2]);
         settings.playerName = config["Settings"]["PlayerName"].StringValue;
 
         SaveGameSettingsToConfig(config, settings);
@@ -205,6 +210,7 @@ public class GameManager : MonoBehaviour {
 
         // Write to config
         config["Settings"]["PlayerColor"].FloatValueArray = new float[] { settings.playerColor.r, settings.playerColor.g, settings.playerColor.b };
+        config["Settings"]["CrosshairColor"].FloatValueArray = new float[] { settings.crosshairColor.r, settings.crosshairColor.g, settings.crosshairColor.b };
         config["Settings"]["PlayerName"].StringValue = settings.playerName;
 
         config.SaveToFile(SETTINGS_FILENAME);
@@ -212,6 +218,7 @@ public class GameManager : MonoBehaviour {
 
     void ApplyPlayerSettings(GameSettings settings) {
         playerColor = settings.playerColor;
+        crosshairColor = settings.crosshairColor;
         playerName = settings.playerName;
     }
 
@@ -248,6 +255,7 @@ public class GameManager : MonoBehaviour {
             crowdVolume = 0.6f,
             gfxPreset = QualitySettings.names.Length/2, // Unity has no "recommended settings" functionality, so just go for the median option
             playerColor = Color.white,
+            crosshairColor = Color.white,
             playerName = "Contestant"
         };
         return settings;
@@ -280,6 +288,7 @@ public class GameManager : MonoBehaviour {
         cfg["Settings"]["CrowdVolume"].FloatValue = settings.crowdVolume;
         cfg["Settings"]["GFXPreset"].IntValue = settings.gfxPreset;
         cfg["Settings"]["PlayerColor"].FloatValueArray = new float[] { settings.playerColor.r, settings.playerColor.g, settings.playerColor.b };
+        cfg["Settings"]["CrosshairColor"].FloatValueArray = new float[] { settings.crosshairColor.r, settings.crosshairColor.g, settings.crosshairColor.b };
         cfg["Settings"]["PlayerName"].StringValue = settings.playerName;
     }
 }

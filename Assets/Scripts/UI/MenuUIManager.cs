@@ -44,7 +44,7 @@ public class MenuUIManager : MonoBehaviour {
     public Toggle joystickToggle;
     // Player
     public InputField playerNameInputField;
-    public ColorPicker playerColorPicker;
+    public ColorPicker playerColorPicker, crosshairColorPicker;
 
     public Color controlModified;
 
@@ -149,6 +149,9 @@ public class MenuUIManager : MonoBehaviour {
         playerColorPicker.AssignColor(ColorValues.R, settings.playerColor.r);
         playerColorPicker.AssignColor(ColorValues.G, settings.playerColor.g);
         playerColorPicker.AssignColor(ColorValues.B, settings.playerColor.b);
+        crosshairColorPicker.AssignColor(ColorValues.R, settings.crosshairColor.r);
+        crosshairColorPicker.AssignColor(ColorValues.G, settings.crosshairColor.g);
+        crosshairColorPicker.AssignColor(ColorValues.B, settings.crosshairColor.b);
 
         playerNameInputField.text = settings.playerName;
     }
@@ -289,7 +292,8 @@ public class MenuUIManager : MonoBehaviour {
     public void Options_PlayerApplyPressed() {
         GameSettings settings = new GameSettings() {
             playerName = playerNameInputField.text,
-            playerColor = playerColorPicker.CurrentColor
+            playerColor = playerColorPicker.CurrentColor,
+            crosshairColor = crosshairColorPicker.CurrentColor
         };
         gm.SetOptionPlayer(settings);
     }

@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.Networking;
 using System.Threading.Tasks;
 
@@ -15,7 +16,10 @@ public class PlayerController : NetworkBehaviour {
     public GameObject serverHandPosition;
     public GameObject clientHandPosition;
     public GameObject cameraPosition;
+    Vector3 weaponPos;
     float clientHandMinZ = 0.7f, clientHandMaxZ = 1.1f;
+
+    public float weaponShakeIntensity;
 
     public float playerSpeed;
     public float jumpForce;
@@ -29,13 +33,15 @@ public class PlayerController : NetworkBehaviour {
 
     float curPower = 0;
     float fovAdd = 10;
+    float shakeIntensity;
 
     Rigidbody rb;
 
     bool isDying;
+    bool charging;
 
-    MenuUIManager uiManager;
     GameManager gm;
+    Image vignette, crosshair;
 
 	void Start () {
 		rb = GetComponent<Rigidbody>();
@@ -47,6 +53,11 @@ public class PlayerController : NetworkBehaviour {
         jumpSound.volume *= gm.audioManager.sfxVolume;
     }
 	
+    void FixedUpdate() {
+        if (charging && curPower < 1000)
+            curPower += 25;
+    }
+
 	void Update () {
         if (!isLocalPlayer)
             return;
@@ -58,9 +69,20 @@ public class PlayerController : NetworkBehaviour {
 
         if(InputManager.GetFire1() && currentWeaponObject)
         {
-            if (curPower < 1000)
-                curPower += 25;
+            charging = true;
+            
             camera.fieldOfView = Mathf.Lerp(gm.cameraFov, gm.cameraFov + fovAdd, curPower / 1000f);
+            vignette.color = Color.Lerp(Color.clear, Color.white, curPower / 1300f);
+            shakeIntensity = Mathf.Lerp(0, weaponShakeIntensity, curPower / 1000f);
+
+            if (weaponPos == null) {
+                weaponPos = clientHandPosition.transform.localPosition;
+            }
+            currentWeaponObject.transform.localPosition = new Vector3(
+                weaponPos.x + Random.Range(-shakeIntensity, shakeIntensity),
+                weaponPos.y + Random.Range(-shakeIntensity, shakeIntensity),
+                weaponPos.z + Random.Range(-shakeIntensity, shakeIntensity));
+
             if(!throwSound.isPlaying && curPower < 1000)
             {
                 CmdPlayerWindUpSound(true);
@@ -84,8 +106,11 @@ public class PlayerController : NetworkBehaviour {
                 //Vector3 force = Vector3.zero;
                 //CmdFireWeapon(gameObject, pos, force);
             }
-            curPower = 0;
+            charging = false;
+            curPower = 0f;
             camera.fieldOfView = gm.cameraFov;
+            vignette.color = Color.clear;
+            shakeIntensity = 0f;
         }
 
         if (!isDying) {
@@ -130,8 +155,7 @@ public class PlayerController : NetworkBehaviour {
             else
                 CmdPlayerMovementSound(false);
 
-
-            rb.velocity = new Vector3(forceX * playerSpeed, rb.velocity.y + forceY, forceZ * playerSpeed);
+            rb.velocity = new Vector3(forceX * playerSpeed * (charging ? 0.5f : 1f), rb.velocity.y + forceY, forceZ * playerSpeed * (charging ? 0.5f : 1f));
         }
 	}
 
@@ -256,6 +280,7 @@ public class PlayerController : NetworkBehaviour {
             clientPos = new Vector3(clientPos.x, clientPos.y, Mathf.Lerp(clientHandMinZ, clientHandMaxZ, (gm.cameraFovClamp.y - gm.cameraFov)/(gm.cameraFovClamp.x - gm.cameraFov)));
             weapon.transform.localPosition = clientPos;
             weapon.transform.localRotation = Quaternion.identity;
+            weaponPos = clientPos;
         } else {
             weapon.transform.SetParent(player.transform);
             weapon.transform.localPosition = pc.serverHandPosition.transform.localPosition;
@@ -270,8 +295,6 @@ public class PlayerController : NetworkBehaviour {
 
     public override void OnStartLocalPlayer() {
         gm = GameManager.instance;
-        uiManager = gm.canvas.GetComponent<MenuUIManager>();
-        //uiManager.HideThingsOnJoined();
 
         foreach (PlayerController player in FindObjectsOfType<PlayerController>()) {
             if (player.gameObject != gameObject) {
@@ -297,6 +320,12 @@ public class PlayerController : NetworkBehaviour {
         // Hide player stuff on client
         GetComponent<MeshRenderer>().enabled = false;
         visor.GetComponent<MeshRenderer>().enabled = false;
+
+        // Set up vignette, crosshair
+        vignette = GameObject.Find("Vignette").GetComponent<Image>();
+        crosshair = GameObject.Find("Crosshair").GetComponent<Image>();
+
+        crosshair.color = gm.crosshairColor;
     }
 
     void OnTriggerEnter(Collider collider) {
